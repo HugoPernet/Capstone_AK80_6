@@ -109,6 +109,7 @@ void loop() {
         }
         
         Serial.println();
+        Serial.print("new commit test");
 
     }
     delay(2000);
