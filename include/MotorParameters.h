@@ -1,4 +1,8 @@
-//Actuators values limits:
+// Author @HugoPernet
+
+
+/// Motor values limits ///
+
 //position
 #define P_MIN -12.5f
 #define P_MAX 12.5f
@@ -14,3 +18,9 @@
 //torque
 #define T_MIN 0.0f
 #define T_MAX 5.0f
+
+/// CAN parameters for motors ///
+
+//Left Motor
+#define CAN_ID_Motor_L 0x01
+#define dlc -1
