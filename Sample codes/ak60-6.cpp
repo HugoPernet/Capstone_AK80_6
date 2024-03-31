@@ -101,7 +101,15 @@ void pack_cmd() {
 void unpack_reply() {
   byte len = 0;
   byte buf[8];
-  CAN.readBytes(buf,8);
+
+  int packetSize = CAN.parsePacket();
+
+  if (packetSize){
+      while (CAN.available()) {
+        CAN.readBytes(buf,8); 
+    }
+  }
+  
 
   unsigned long canId = CAN.packetId();
   unsigned int id = buf[0];
@@ -112,14 +120,14 @@ void unpack_reply() {
   p_out = uint_to_float(p_int, P_MIN, P_MAX, 16);
   v_out = uint_to_float(v_int, V_MIN, V_MAX, 12);
   t_out = uint_to_float(i_int, -T_MAX, T_MAX, 12);
-  Serial.println("torque:"+String(t_out)+" V out"+ String(v_out));
+  Serial.println("P_out:"+String(p_out)+ " torque:"+String(t_out)+" V_out"+ String(v_out));
 }
 
 
 
 
 void setup() {
-    Serial.begin(115200); 
+    Serial.begin(115200); //115200
     while (!Serial) delay(10);
     Serial.println("CAN Receiver");
     pinMode(PIN_CAN_STANDBY, OUTPUT); 
