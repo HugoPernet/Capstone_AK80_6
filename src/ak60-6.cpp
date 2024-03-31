@@ -111,6 +111,7 @@ void unpack_reply() {
   p_out = uint_to_float(p_int, P_MIN, P_MAX, 16);
   v_out = uint_to_float(v_int, V_MIN, V_MAX, 12);
   t_out = uint_to_float(i_int, -T_MAX, T_MAX, 12);
+  Serial.println("torque:"+String(t_out)+" V out"+ String(v_out));
 }
 
 
@@ -131,8 +132,10 @@ void setup() {
         while (1) delay(10); 
         }
     delay(1000);
-    Serial.println("Starting CAN!"); 
+    Serial.println("Starting CAN!");
+    delay(1000);
     EnterMotorMode();
+    delay(1000);
 
 }
 
