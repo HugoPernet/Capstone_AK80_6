@@ -3,12 +3,12 @@
 #include <MotorConfig.cpp>
 
 //weight
-float weight = 10;
+float weight = 100;
 
 // Set values
 float p_in = 0.0f;
 float v_in = 0.0f;
-float kp_in = 20.0f;
+float kp_in = 200.0f;
 float kd_in = 1.0f;
 float t_in = 0.0f;
 // measured values
@@ -17,7 +17,7 @@ float v_out = 0.0f;
 float t_out = 0.0f;
 
 void setup() {
-    Serial.begin(115200); 
+    Serial.begin(900); 
     while (!Serial) delay(10);
     Serial.println("Serial connection established..");
 
@@ -40,17 +40,22 @@ void setup() {
     EnterMotorMode();
     delay(1000);
     SetZero();
-
+    delay(1000);
+    Motor_Out reply = unpack_reply();
+    Serial.println(String(reply.Motor_Out_p));
+    delay(5000);
 }
 
 float dir = -1;
 void loop() {
-
-    p_in = p_out;
-    t_in = weight*sin(p_out)+ 0.00;
+    Motor_Out reply = unpack_reply();
+    p_out = reply.Motor_Out_p;
+    v_out = reply.Motor_Out_v;
+    t_out = reply.Motor_Out_t;
+    Serial.println("P_out:"+String(p_out)+ " torque:"+String(t_out)+" V out"+ String(v_out));
+    //p_in = p_out;
+    t_in = weight*sin(p_out + 0.06) + 0.0;
     t_in = constrain(t_in, T_MIN, T_MAX);
-    delay(10);
     pack_cmd(p_in,v_in,kp_in,kd_in,t_in);
-    SERIAL_PORT_MONITOR.println("Send t_in:"+String(t_in));
-    unpack_reply();
+    delay(100);
 }

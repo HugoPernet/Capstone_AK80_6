@@ -89,9 +89,9 @@ void pack_cmd(float p_in, float v_in, float kp_in, float kd_in, float t_in) {
 
 struct Motor_Out {
   float CanID;
-  float p_out;
-  float v_out;
-  float t_out;
+  float Motor_Out_p;
+  float Motor_Out_v;
+  float Motor_Out_t;
 };
 
 Motor_Out unpack_reply() {
@@ -99,19 +99,27 @@ Motor_Out unpack_reply() {
   byte buf[8];
   CAN.readBytes(buf,8);
 
+  int packetSize = CAN.parsePacket();
+
+  if (packetSize){
+      while (CAN.available()) {
+        CAN.readBytes(buf,8); 
+    }
+  }
+
   unsigned int id = buf[0];
   unsigned int p_int = (buf[1] << 8) | buf[2];
   unsigned int v_int = (buf[3] << 4) | (buf[4] >> 4);
   unsigned int i_int = ((buf[4] & 0xf) << 8) | buf[5];
 
-  struct Motor_Out Motor_Command;
+  Motor_Out Motor_Command;
 
   Motor_Command.CanID = id;
-  Motor_Command.p_out = uint_to_float(p_int, P_MIN, P_MAX, 16);
-  Motor_Command.v_out = uint_to_float(v_int, V_MIN, V_MAX, 12);
-  Motor_Command.t_out = uint_to_float(i_int, -T_MAX, T_MAX, 12);
+  Motor_Command.Motor_Out_p = uint_to_float(p_int, P_MIN, P_MAX, 16);
+  Motor_Command.Motor_Out_v = uint_to_float(v_int, V_MIN, V_MAX, 12);
+  Motor_Command.Motor_Out_t = uint_to_float(i_int, -T_MAX, T_MAX, 12);
 
-  Serial.println("torque:"+String(Motor_Command.p_out)+" V out"+ String(Motor_Command.v_out));
+  //Serial.println("P_out:"+String(Motor_Command.Motor_Out_p)+ " torque:"+String(Motor_Command.Motor_Out_t)+" V out"+ String(Motor_Command.Motor_Out_v));
 
   return Motor_Command;
 }
