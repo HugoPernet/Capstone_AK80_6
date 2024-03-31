@@ -1,11 +1,12 @@
 /*
 * Adafruit Feather M4 CAN Receiver Example */
 #include <CANSAME5x.h>
+CANSAME5x CAN;
 
 //custom headers
 #include <MotorParameters.h>
 
-CANSAME5x CAN;
+
 
 // intial values
 float p_in = 0.0f;
