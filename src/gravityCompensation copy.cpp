@@ -22,8 +22,8 @@ int dlc = -1;
 // Set values
 float p_in = 0.0f;
 float v_in = 0.0f;
-float kp_in = 20.0f;
-float kd_in = 1.0f;
+float kp_in = 1.80f;
+float kd_in = 0.6f;
 float t_in = 0.0f;
 // measured values
 float p_out = 0.0f;
@@ -68,6 +68,15 @@ void EnterMotorMode() {
 
 void ExitMotorMode() {
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
+  CAN.beginPacket(MY_PACKET_ID,dlc,false);
+  for (int i =0; i<=7;i++){
+    CAN.write(buf[i]);
+  }
+  CAN.endPacket();
+}
+
+void SetZero() {
+  unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe};
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
     CAN.write(buf[i]);
@@ -144,6 +153,7 @@ void setup() {
     Serial.println("Starting CAN!");
     delay(1000);
     EnterMotorMode();
+    SetZero();
     delay(1000);
  
 }
@@ -153,7 +163,8 @@ void loop() {
     if (p_in <= P_MIN || p_in >= P_MAX) {
       dir *= -1;
     }
-    p_in = constrain(p_in + (dir * 0.01), P_MIN, P_MAX);
+    p_in = p_out;
+    t_in = 1.5*sin(p_out);
     delay(10);
     pack_cmd();
     SERIAL_PORT_MONITOR.println("Send p_in:"+String(p_in));

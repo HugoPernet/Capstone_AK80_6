@@ -22,7 +22,7 @@ int dlc = -1;
 // Set values
 float p_in = 0.0f;
 float v_in = 0.0f;
-float kp_in = 20.0f;
+float kp_in = 2.0f;
 float kd_in = 1.0f;
 float t_in = 0.0f;
 // measured values
@@ -127,7 +127,7 @@ void unpack_reply() {
 
 
 void setup() {
-    Serial.begin(1000); //115200
+    Serial.begin(115200); //115200
     while (!Serial) delay(10);
     Serial.println("CAN Receiver");
     pinMode(PIN_CAN_STANDBY, OUTPUT); 
@@ -145,7 +145,7 @@ void setup() {
     delay(1000);
     EnterMotorMode();
     delay(1000);
-
+ 
 }
 
 float dir = -1;
