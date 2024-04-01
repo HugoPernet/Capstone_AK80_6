@@ -1,8 +1,11 @@
-//Author @HugoPernet
+//Auhtor @ksmin1
 
 #include <CANSAME5x.h>
+//#include <Arduino.h>
 
 CANSAME5x CAN;
+
+
 
 #define P_MIN -12.5f
 #define P_MAX 12.5f
@@ -15,16 +18,9 @@ CANSAME5x CAN;
 #define T_MIN -18.0f
 #define T_MAX 18.0f
 
-const int buttonUP_Pin = 2;
-const int buttonDown_Pin = 13;
-
 
 #define MY_PACKET_ID 0x01
 int dlc = -1;
-
-//torque:
-const float StaticFriction = 1.0;
-float TorqueAmplitude = 1.0;
 
 // Set values
 float p_in = 0.0f;
@@ -37,6 +33,14 @@ float p_out = 0.0f;
 float v_out = 0.0f;
 float t_out = 0.0f;
 
+// BTN pins
+#define BTN_UP 6
+#define BTN_DOWN 5
+int a = 0;
+int b = 0;
+long debounceDelay = 200;
+
+float A = 1.0;
 
 unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
   /// Converts a float to an unsigned int, given range and number of bits ///
@@ -141,16 +145,28 @@ void unpack_reply() {
 }
 
 
+void isr_up() {
+  long myTime = millis();
+  while(millis()-myTime < debounceDelay) {
+    a = 1;
+  }
+}
 
-
+void isr_down() {
+  long myTime = millis();
+  while(millis()-myTime < debounceDelay) {
+    b = 1;
+  }
+}
 
 void setup() {
+    Serial.begin(1500); //115200
 
-    //pinout:
-    pinMode(buttonUP_Pin, INPUT);
+    pinMode(BTN_DOWN, INPUT);
+    pinMode(BTN_UP, INPUT);
+    // attachInterrupt(BTN_DOWN, isr_down, RISING);
+    // attachInterrupt(BTN_UP, isr_up, RISING);
 
-
-    Serial.begin(3000); //115200
     while (!Serial) delay(10);
     Serial.println("CAN Receiver");
     pinMode(PIN_CAN_STANDBY, OUTPUT); 
@@ -158,7 +174,7 @@ void setup() {
     pinMode(PIN_CAN_BOOSTEN, OUTPUT); 
     digitalWrite(PIN_CAN_BOOSTEN, true); // turn on booster
     // start the CAN bus at 1Mbaud 
-    
+
     if (!CAN.begin(1000000)) {
         Serial.println("Starting CAN failed!");
         while (1) delay(10); 
@@ -169,17 +185,26 @@ void setup() {
     EnterMotorMode();
     SetZero();
     delay(1000);
-
- 
 }
 
 float dir = -1;
 void loop() {
-    if (abs(t_out)<=StaticFriction){
-      if (p_in <= P_MIN || p_in >= P_MAX) {
-      dir *= -1;
+    bool val_up = digitalRead(BTN_UP);
+    bool val_down = digitalRead(BTN_DOWN);
+    if (val_up == 1) {
+      A = A+0.01;
     }
+    if (val_down == 1) {
+      A = A-0.01;
+    }
+    if (abs(t_out)<=A){
+      if (p_in <= P_MIN || p_in >= P_MAX) {
+        dir *= -1;
+      }
     p_in = constrain(p_in + (dir * 0.01), P_MIN, P_MAX);
+
+    Serial.println(String(A));
+
     delay(10);
     pack_cmd();
     SERIAL_PORT_MONITOR.println("Send p_in:"+String(p_in));
@@ -187,15 +212,11 @@ void loop() {
     }
     else{
       p_in = p_out;
-      t_in = TorqueAmplitude*sin(p_out);
+      t_in = A*sin(p_out);
       delay(10);
       pack_cmd();
       unpack_reply();
       Serial.println("Maintaining pos >>> P_out:"+String(p_out)+ " torque:"+String(t_out)+" V_out"+ String(v_out));
     }
-
-    //check buttons:
-    bool buttonState = digitalRead(buttonUP_Pin);
-
-    // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-  }
+    
+}

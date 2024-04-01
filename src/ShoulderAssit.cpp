@@ -17,7 +17,7 @@ const int buttonUP_Pin = 2;
 const int buttonDown_Pin = 13;
 
 
-#define MY_PACKET_ID 0x01
+#define MY_PACKET_ID 0x02
 int dlc = -1;
 
 
@@ -32,6 +32,7 @@ float p_out = 0.0f;
 float v_out = 0.0f;
 float t_out = 0.0f;
 
+long dt = 10;
 
 unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
   /// Converts a float to an unsigned int, given range and number of bits ///
@@ -168,24 +169,26 @@ void setup() {
  
 }
 
-float dir = -1;
+float dir = 1;
 void loop() {
-    if (abs(t_out)<=1){
+  long time_past = millis();
+    if (abs(t_out)<=2){
       if (p_in <= P_MIN || p_in >= P_MAX) {
       dir *= -1;
     }
     p_in = constrain(p_in + (dir * 0.01), P_MIN, P_MAX);
-    delay(10);
+    //delay(10);
     pack_cmd();
     SERIAL_PORT_MONITOR.println("Send p_in:"+String(p_in));
     unpack_reply();
     }
     else{
       p_in = p_out;
-      t_in = 1.0*sin(p_out);
+      t_in = 2.0*sin(p_out);
       delay(10);
       pack_cmd();
       unpack_reply();
       Serial.println("Maintaining pos >>> P_out:"+String(p_out)+ " torque:"+String(t_out)+" V_out"+ String(v_out));
     }
+    while (millis()-time_past < dt) {}
   }
