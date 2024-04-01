@@ -2,8 +2,6 @@
 
 CANSAME5x CAN;
 
-
-
 #define P_MIN -12.5f
 #define P_MAX 12.5f
 #define V_MIN -65.0f
@@ -15,9 +13,13 @@ CANSAME5x CAN;
 #define T_MIN -18.0f
 #define T_MAX 18.0f
 
+const int buttonUP_Pin = 2;
+const int buttonDown_Pin = 13;
+
 
 #define MY_PACKET_ID 0x01
 int dlc = -1;
+
 
 // Set values
 float p_in = 0.0f;
@@ -29,6 +31,7 @@ float t_in = 0.0f;
 float p_out = 0.0f;
 float v_out = 0.0f;
 float t_out = 0.0f;
+
 
 unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
   /// Converts a float to an unsigned int, given range and number of bits ///
@@ -135,7 +138,13 @@ void unpack_reply() {
 
 
 
+
 void setup() {
+
+    //pinout:
+    pinMode(buttonUP_Pin, INPUT);
+
+
     Serial.begin(3000); //115200
     while (!Serial) delay(10);
     Serial.println("CAN Receiver");
@@ -173,11 +182,10 @@ void loop() {
     }
     else{
       p_in = p_out;
-      t_in = 1*sin(p_out);
+      t_in = 1.0*sin(p_out);
       delay(10);
       pack_cmd();
       unpack_reply();
       Serial.println("Maintaining pos >>> P_out:"+String(p_out)+ " torque:"+String(t_out)+" V_out"+ String(v_out));
     }
-    
-}
+  }
