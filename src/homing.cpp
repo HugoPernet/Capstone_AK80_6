@@ -1,3 +1,5 @@
+//Author @HugoPernet
+
 #include <CANSAME5x.h>
 
 CANSAME5x CAN;
