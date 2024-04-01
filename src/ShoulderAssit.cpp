@@ -2,6 +2,8 @@
 
 CANSAME5x CAN;
 
+
+////////// motor parameters ////////// 
 #define P_MIN -12.5f
 #define P_MAX 12.5f
 #define V_MIN -65.0f
@@ -13,14 +15,14 @@ CANSAME5x CAN;
 #define T_MIN -18.0f
 #define T_MAX 18.0f
 
-const int buttonUP_Pin = 2;
-const int buttonDown_Pin = 13;
 
 
+////////// CAN parameters ////////// 
 #define MY_PACKET_ID 0x02
 int dlc = -1;
 
 
+////////// Variable initialisation ////////// 
 // Set values
 float p_in = 0.0f;
 float v_in = 0.0f;
@@ -31,11 +33,14 @@ float t_in = 0.0f;
 float p_out = 0.0f;
 float v_out = 0.0f;
 float t_out = 0.0f;
-
+// loop period
 long dt = 10;
 
+
+////////// fubctions //////////
+
 unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
-  /// Converts a float to an unsigned int, given range and number of bits ///
+  // Converts a float to an unsigned int, given range and number of bits
   float span = x_max - x_min;
   float offset = x_min;
   unsigned int pgg = 0;
@@ -49,6 +54,7 @@ unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
 }
 
 float uint_to_float(unsigned int x_int, float x_min, float x_max, int bits) {
+  // Converts an unsigned int to a float, given range and number of bits
   float span = x_max - x_min;
   float offset = x_min;
   float pgg = 0;
@@ -63,6 +69,7 @@ float uint_to_float(unsigned int x_int, float x_min, float x_max, int bits) {
 
 void EnterMotorMode() {
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
+  //Initialize the motor and CAN com (Green led ON)
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
     CAN.write(buf[i]);
@@ -71,6 +78,7 @@ void EnterMotorMode() {
 }
 
 void ExitMotorMode() {
+  //Disable the motor and CAN com (Green led OFF)
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
@@ -80,6 +88,7 @@ void ExitMotorMode() {
 }
 
 void SetZero() {
+  //Initialize the motor encoder (current position = 0.0 rad)
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe};
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
@@ -89,6 +98,7 @@ void SetZero() {
 }
 
 void pack_cmd() {
+  //send Can command based on current motor variables (p_in,v_in, Kp_in, Kd_in, t_in)
   float p_des = constrain(p_in, P_MIN, P_MAX);
   float v_des = constrain(v_in, V_MIN, V_MAX);
   float kp = constrain(kp_in, KP_MIN, KP_MAX);
@@ -102,8 +112,9 @@ void pack_cmd() {
   unsigned int t_int = float_to_uint(t_ff, T_MIN, T_MAX, 12);
 
   unsigned char buf[8] = {(p_int >> 8), (p_int & 0xff),(v_int >> 4),(((v_int & 0xf) << 4) | (kp_int >> 8)),(kp_int & 0xff),(kd_int >> 4),(((kd_int & 0xf) << 4) | (t_int >> 8)),(t_int & 0xff)};
-  CAN.beginPacket(MY_PACKET_ID,dlc,false);
   
+  CAN.beginPacket(MY_PACKET_ID,dlc,false);
+
   for (int i =0; i<=7;i++){
     CAN.write(buf[i]);
   }
@@ -112,17 +123,17 @@ void pack_cmd() {
 }
 
 void unpack_reply() {
-  byte len = 0;
+  //Unpack motor reply
   byte buf[8];
 
   int packetSize = CAN.parsePacket();
 
   if (packetSize){
-      while (CAN.available()) {
-        CAN.readBytes(buf,8); 
+    while (CAN.available()) {
+      CAN.readBytes(buf,8); 
     }
   }
-  
+
 
   unsigned long canId = CAN.packetId();
   unsigned int id = buf[0];
@@ -133,7 +144,7 @@ void unpack_reply() {
   p_out = uint_to_float(p_int, P_MIN, P_MAX, 16);
   v_out = uint_to_float(v_int, V_MIN, V_MAX, 12);
   t_out = uint_to_float(i_int, -T_MAX, T_MAX, 12);
-  Serial.println("P_out:"+String(p_out)+ " torque:"+String(t_out)+" V_out"+ String(v_out));
+  Serial.println("pos ="+String(p_out)+ " T ="+String(t_out)+" V ="+ String(v_out));
 }
 
 
@@ -142,53 +153,53 @@ void unpack_reply() {
 
 void setup() {
 
-    //pinout:
-    pinMode(buttonUP_Pin, INPUT);
+  //Start Serial com
+  Serial.begin(3000);
+  while (!Serial) delay(10);
+  Serial.println("Serial com begin");
 
-
-    Serial.begin(3000); //115200
-    while (!Serial) delay(10);
-    Serial.println("CAN Receiver");
-    pinMode(PIN_CAN_STANDBY, OUTPUT); 
-    digitalWrite(PIN_CAN_STANDBY, false); // turn off STANDBY 
-    pinMode(PIN_CAN_BOOSTEN, OUTPUT); 
-    digitalWrite(PIN_CAN_BOOSTEN, true); // turn on booster
-    // start the CAN bus at 1Mbaud 
-    
-    if (!CAN.begin(1000000)) {
-        Serial.println("Starting CAN failed!");
-        while (1) delay(10); 
-        }
-    delay(1000);
-    Serial.println("Starting CAN!");
-    delay(1000);
-    EnterMotorMode();
-    SetZero();
-    delay(1000);
-
- 
+  //define CAN controler pinOut
+  pinMode(PIN_CAN_STANDBY, OUTPUT); 
+  digitalWrite(PIN_CAN_STANDBY, false); // turn off STANDBY 
+  pinMode(PIN_CAN_BOOSTEN, OUTPUT); 
+  digitalWrite(PIN_CAN_BOOSTEN, true); // turn on booster
+  
+  // start the CAN bus at 1Mbaud 
+  if (!CAN.begin(1000000)) {
+    Serial.println("Starting CAN failed!");
+    while (1) delay(10); 
+  }
+  Serial.println("Starting CAN!");
+  
+  //intilise motor
+  delay(1000);
+  EnterMotorMode();
+  SetZero();
+  delay(1000);
 }
 
-float dir = 1;
+float dir = 1; //motor starts rotating  counterclockwise if dir =1
+
 void loop() {
   long time_past = millis();
+
+    //move motor until it collides with the pulley
     if (abs(t_out)<=2){
       if (p_in <= P_MIN || p_in >= P_MAX) {
       dir *= -1;
-    }
+      }
     p_in = constrain(p_in + (dir * 0.01), P_MIN, P_MAX);
-    //delay(10);
     pack_cmd();
-    SERIAL_PORT_MONITOR.println("Send p_in:"+String(p_in));
     unpack_reply();
     }
+    //maintin position
     else{
       p_in = p_out;
       t_in = 2.0*sin(p_out);
-      delay(10);
+      //delay(10);
       pack_cmd();
       unpack_reply();
-      Serial.println("Maintaining pos >>> P_out:"+String(p_out)+ " torque:"+String(t_out)+" V_out"+ String(v_out));
+      Serial.println(">>> Maintaining pos ="+String(p_out)+ " T ="+String(t_out)+" V ="+ String(v_out));
     }
     while (millis()-time_past < dt) {}
   }
