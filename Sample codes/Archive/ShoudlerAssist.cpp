@@ -15,7 +15,7 @@ CANSAME5x CAN;
 #define T_MIN -18.0f
 #define T_MAX 18.0f
 
-
+//CAN Parameters
 #define MY_PACKET_ID 0x01
 int dlc = -1;
 
@@ -45,6 +45,7 @@ unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
 }
 
 float uint_to_float(unsigned int x_int, float x_min, float x_max, int bits) {
+  /// Converts Uint to float, given range and number of bits ///
   float span = x_max - x_min;
   float offset = x_min;
   float pgg = 0;
@@ -58,6 +59,7 @@ float uint_to_float(unsigned int x_int, float x_min, float x_max, int bits) {
 }
 
 void EnterMotorMode() {
+  /// Enable Motor ///
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
@@ -67,6 +69,7 @@ void EnterMotorMode() {
 }
 
 void ExitMotorMode() {
+  /// Disable the Motor ///
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
@@ -76,6 +79,7 @@ void ExitMotorMode() {
 }
 
 void SetZero() {
+  /// Sets current encoder position to 0 rad ///
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe};
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
@@ -85,6 +89,7 @@ void SetZero() {
 }
 
 void pack_cmd() {
+  // Send command to the motor//
   float p_des = constrain(p_in, P_MIN, P_MAX);
   float v_des = constrain(v_in, V_MIN, V_MAX);
   float kp = constrain(kp_in, KP_MIN, KP_MAX);
@@ -108,7 +113,7 @@ void pack_cmd() {
 }
 
 void unpack_reply() {
-  byte len = 0;
+  /// Listen to  CAN ///
   byte buf[8];
 
   int packetSize = CAN.parsePacket();
@@ -119,7 +124,6 @@ void unpack_reply() {
     }
   }
   
-
   unsigned long canId = CAN.packetId();
   unsigned int id = buf[0];
   unsigned int p_int = (buf[1] << 8) | buf[2];
@@ -136,26 +140,26 @@ void unpack_reply() {
 
 
 void setup() {
-    Serial.begin(1000); //115200
-    while (!Serial) delay(10);
-    Serial.println("CAN Receiver");
-    pinMode(PIN_CAN_STANDBY, OUTPUT); 
-    digitalWrite(PIN_CAN_STANDBY, false); // turn off STANDBY 
-    pinMode(PIN_CAN_BOOSTEN, OUTPUT); 
-    digitalWrite(PIN_CAN_BOOSTEN, true); // turn on booster
-    // start the CAN bus at 1Mbaud 
-    
-    if (!CAN.begin(1000000)) {
-        Serial.println("Starting CAN failed!");
-        while (1) delay(10); 
-        }
-    delay(1000);
-    Serial.println("Starting CAN!");
-    delay(1000);
-    EnterMotorMode();
-    SetZero();
-    delay(4000);
- 
+  //starts Serial Com
+  Serial.begin(1000); //115200
+  while (!Serial) delay(10);
+  Serial.println("CAN Receiver");
+  pinMode(PIN_CAN_STANDBY, OUTPUT); 
+  digitalWrite(PIN_CAN_STANDBY, false); // turn off STANDBY 
+  pinMode(PIN_CAN_BOOSTEN, OUTPUT); 
+  digitalWrite(PIN_CAN_BOOSTEN, true); // turn on booster
+  
+  // start the CAN bus at 1Mbaud 
+  if (!CAN.begin(1000000)) {
+    Serial.println("Starting CAN failed!");
+    while (1) delay(10); 
+  }
+  delay(1000);
+  Serial.println("Starting CAN!");
+  delay(1000);
+  EnterMotorMode();
+  SetZero();
+  delay(4000);
 }
 
 float dir = 1;

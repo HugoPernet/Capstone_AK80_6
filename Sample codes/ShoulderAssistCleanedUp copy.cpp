@@ -1,31 +1,8 @@
-//Author @HugoPernet
-
 #include <CANSAME5x.h>
+#include <MotorConfig.h>
 
 CANSAME5x CAN;
 
-#define P_MIN -12.5f
-#define P_MAX 12.5f
-#define V_MIN -65.0f
-#define V_MAX 65.0f
-#define KP_MIN 0.0f
-#define KP_MAX 500.0f
-#define KD_MIN 0.0f
-#define KD_MAX 5.0f
-#define T_MIN -18.0f
-#define T_MAX 18.0f
-
-const int buttonUP_Pin = 5;
-const int buttonDown_Pin = 6;
-
-
-#define MY_PACKET_ID 0x01
-int dlc = -1;
-
-//torque:
-const float StaticFriction = 1.0;
-float TorqueAmplitude = 1.0;
-const float StepTorque = 0.01;
 
 // Set values
 float p_in = 0.0f;
@@ -37,7 +14,6 @@ float t_in = 0.0f;
 float p_out = 0.0f;
 float v_out = 0.0f;
 float t_out = 0.0f;
-
 
 unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
   /// Converts a float to an unsigned int, given range and number of bits ///
@@ -54,6 +30,7 @@ unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
 }
 
 float uint_to_float(unsigned int x_int, float x_min, float x_max, int bits) {
+  /// Converts Uint to float, given range and number of bits ///
   float span = x_max - x_min;
   float offset = x_min;
   float pgg = 0;
@@ -67,6 +44,7 @@ float uint_to_float(unsigned int x_int, float x_min, float x_max, int bits) {
 }
 
 void EnterMotorMode() {
+  /// Enable Motor ///
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
@@ -76,6 +54,7 @@ void EnterMotorMode() {
 }
 
 void ExitMotorMode() {
+  /// Disable the Motor ///
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
@@ -85,6 +64,7 @@ void ExitMotorMode() {
 }
 
 void SetZero() {
+  /// Sets current encoder position to 0 rad ///
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe};
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   for (int i =0; i<=7;i++){
@@ -94,6 +74,7 @@ void SetZero() {
 }
 
 void pack_cmd() {
+  // Send command to the motor//
   float p_des = constrain(p_in, P_MIN, P_MAX);
   float v_des = constrain(v_in, V_MIN, V_MAX);
   float kp = constrain(kp_in, KP_MIN, KP_MAX);
@@ -117,7 +98,7 @@ void pack_cmd() {
 }
 
 void unpack_reply() {
-  byte len = 0;
+  /// Listen to  CAN ///
   byte buf[8];
 
   int packetSize = CAN.parsePacket();
@@ -128,7 +109,6 @@ void unpack_reply() {
     }
   }
   
-
   unsigned long canId = CAN.packetId();
   unsigned int id = buf[0];
   unsigned int p_int = (buf[1] << 8) | buf[2];
@@ -144,69 +124,47 @@ void unpack_reply() {
 
 
 
-
 void setup() {
+  //starts Serial Com
+  Serial.begin(1000); //115200
+  while (!Serial) delay(10);
 
-    //pinout:
-    pinMode(buttonUP_Pin, INPUT);
-    pinMode(buttonDown_Pin, INPUT);
-
-
-    Serial.begin(3000); //115200
-    while (!Serial) delay(10);
-    Serial.println("CAN Receiver");
-    pinMode(PIN_CAN_STANDBY, OUTPUT); 
-    digitalWrite(PIN_CAN_STANDBY, false); // turn off STANDBY 
-    pinMode(PIN_CAN_BOOSTEN, OUTPUT); 
-    digitalWrite(PIN_CAN_BOOSTEN, true); // turn on booster
-    // start the CAN bus at 1Mbaud 
-    
-    if (!CAN.begin(1000000)) {
-        Serial.println("Starting CAN failed!");
-        while (1) delay(10); 
-        }
-    delay(1000);
-    Serial.println("Starting CAN!");
-    delay(1000);
-    EnterMotorMode();
-    SetZero();
-    delay(1000);
-
- 
+  //Can PinOut
+  pinMode(PIN_CAN_STANDBY, OUTPUT); 
+  digitalWrite(PIN_CAN_STANDBY, false); // turn off STANDBY 
+  pinMode(PIN_CAN_BOOSTEN, OUTPUT); 
+  digitalWrite(PIN_CAN_BOOSTEN, true); // turn on booster
+  
+  // start the CAN bus at 1Mbaud 
+  if (!CAN.begin(1000000)) {
+    Serial.println("Starting CAN failed!");
+    while (1) delay(10); 
+  }
+  delay(1000);
+  Serial.println("Starting CAN!");
+  delay(1000);
+  EnterMotorMode();
+  SetZero();
+  delay(4000);
 }
 
-float dir = -1;
+float dir = 1;
 void loop() {
-    if (abs(t_out)<=StaticFriction){
-      if (p_in <= P_MIN || p_in >= P_MAX) {
-      dir *= -1;
-    }
+
+  //move motor until it collides with the pulley
+    if (abs(t_out)<=1.0){
     p_in = constrain(p_in + (dir * 0.01), P_MIN, P_MAX);
-    delay(10);
     pack_cmd();
-    SERIAL_PORT_MONITOR.println("Send p_in:"+String(p_in));
+    unpack_reply();
+    delay(10);
+    }
+  //maintains position
+    else{
+    p_in = p_out;
+    t_in = 6.0*sin(p_out) +2.0;
+    pack_cmd();
+    SERIAL_PORT_MONITOR.println("Maintaining pos arm "+String(p_out*360/2*3.14));
+    delay(10);
     unpack_reply();
     }
-    else{
-      p_in = p_out;
-      t_in = TorqueAmplitude*sin(p_out);
-      delay(10);
-      pack_cmd();
-      unpack_reply();
-      Serial.println("Maintaining pos >>> P_out:"+String(p_out)+ " torque:"+String(t_out)+" V_out"+ String(v_out));
-    }
-
-    //check buttons:
-    bool buttonUpState = digitalRead(buttonUP_Pin);
-    bool buttonDownState = digitalRead(buttonDown_Pin);
-    
-    // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-    if (buttonUpState){
-      TorqueAmplitude += StepTorque;
-      Serial.println("toraue Up");
-    }
-    if (buttonDownState){
-      TorqueAmplitude -= StepTorque;
-      Serial.println("torque Down");
-    }
-  }
+}
