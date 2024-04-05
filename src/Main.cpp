@@ -67,7 +67,7 @@ void loop() {
       pack_cmd(MotorIn);
       delay(10);
       MotorOut = unpack_reply();
-      Serial.println(">>> Maintining P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity)+"Amp:"+String(TorqueAmplitude));
+      Serial.println(">>> Maintining P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity)+" Amp:"+String(TorqueAmplitude));
     }
   //Read IMU
   //IMUout = readIMU();
