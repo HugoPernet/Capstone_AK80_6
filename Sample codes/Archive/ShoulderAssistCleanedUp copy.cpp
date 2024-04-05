@@ -161,7 +161,7 @@ void loop() {
   //maintains position
     else{
     p_in = p_out;
-    t_in = 6.0*sin(p_out) +2.0;
+    t_in = 2.0*sin(p_out) +2.0;
     pack_cmd();
     SERIAL_PORT_MONITOR.println("Maintaining pos arm "+String(p_out*360/2*3.14));
     delay(10);

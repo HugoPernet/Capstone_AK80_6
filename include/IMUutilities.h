@@ -52,12 +52,5 @@ struct IMU_data readIMU(){
   Imu_readings.pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
   Imu_readings.roll = atan2(ay, az) * 180.0 / M_PI;
 
-  /* Print out the values */
-  Serial.print("Pitch:");
-  Serial.print(Imu_readings.pitch);
-  Serial.print(" degrees, Roll:");
-  Serial.print(Imu_readings.roll);
-  Serial.println(" degrees");
-
   return Imu_readings;
 }
