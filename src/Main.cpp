@@ -24,7 +24,7 @@ void setup() {
   delay(1000);
 
   //SetUp IMU
- // initializeIMU();
+  initializeIMU();
 
   //Setup motor
   EnterMotorMode();
@@ -60,6 +60,6 @@ void loop() {
     Serial.println(">>> Maintining P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
     }
   //Read IMU
-  //IMUout = readIMU();
-  //Serial.println("IMU Pitch: "+String(IMUout.pitch) + "IMU Roll"+ String(IMUout.roll));
+  IMUout = readIMU();
+  Serial.println("IMU Pitch: "+String(IMUout.pitch) + "IMU Roll"+ String(IMUout.roll));
 }
