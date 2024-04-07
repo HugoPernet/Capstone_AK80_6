@@ -130,7 +130,7 @@ struct MotorReply unpack_reply() {
     /// Listen to  CAN ///
   if (packetSize){
       while (CAN.available()) {
-        CAN.readBytes(buf,8); 
+        CAN.readBytes(buf,8);
     }
   }
   
@@ -146,3 +146,5 @@ struct MotorReply unpack_reply() {
 
   return reply;
 }
+
+ 

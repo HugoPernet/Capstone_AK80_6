@@ -1,5 +1,8 @@
 #include <MotorUtilities.h>
+#include <potentiometerUtilities.h>
 #include <IMUutilities.h>
+
+#define POT 19 // pin number of potentiometer
 
 //////// Variable definition ////////
 
@@ -7,23 +10,22 @@
 MotorCommand MotorIn;
 MotorReply MotorOut;
 // intialise IMU Data
-IMU_data IMUout;
+float LegAngle = 0.0;
 
 //Mechanical constant:
 const float StaticFirctionTroque = 1.0;
-const float TorqueAmplitude = 2.0;
+float TorqueAmplitude = 1.0;
 
 
 void setup() {
   //starts Serial Com
-  Serial.begin(1000);
+  Serial.begin(11250);
   while (!Serial) delay(10);
 
   //starts Can com
   SetupCan();
   delay(1000);
 
-  //SetUp IMU
   initializeIMU();
 
   //Setup motor
@@ -34,32 +36,51 @@ void setup() {
   
 }
 
-float dir = 1;
+
 
 void loop() {
+    //Read IMU
+    LegAngle = readIMU();
+    Serial.println("Leg Angle : " + String(LegAngle));
 
-  //move motor until it collides with the pulley
-    if (abs(MotorOut.torque)<=StaticFirctionTroque){
-      if (MotorIn.p_in <= P_MIN || MotorIn.p_in >= P_MAX) {
-      dir *= -1;
-      }
-    MotorIn.p_in = constrain(MotorIn.p_in + dir*Step, P_MIN, P_MAX);
-    pack_cmd(MotorIn);
-    delay(10);
-    MotorOut = unpack_reply();
-    Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.velocity)+" V_out"+ String(MotorOut.torque));
+    if(LegAngle >=30.0){
+      Serial.println("leg mode");
+      //move motor until it collides with the leg
+      while (MotorOut.torque >= -StaticFirctionTroque){
+        MotorIn.p_in = constrain(MotorIn.p_in - Step, P_MIN, P_MAX);
+        pack_cmd(MotorIn);
+        delay(5);
+        MotorOut = unpack_reply();
+        Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out "+ String(MotorOut.velocity));
+      } 
+      //maintains position
+      MotorIn.p_in = MotorOut.position;
+          MotorIn.t_in = -TorqueAmplitude*sin(radians(LegAngle)) -1.0;
+      pack_cmd(MotorIn);
+      delay(5);
+      MotorOut = unpack_reply();
+      Serial.println(">>> Maintining P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
+  }
+  else{
+    //move motor until it collides with the pulley
+    while(abs(MotorOut.torque)<=StaticFirctionTroque){
+      MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
+      pack_cmd(MotorIn);
+      delay(5);
+      MotorOut = unpack_reply();
+      Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
     }
-  //maintains position
-    else{
+    //maintains position
     MotorIn.p_in = MotorOut.position;
-    MotorIn.t_in = TorqueAmplitude*sin(MotorOut.position) +2.0;
+    MotorIn.t_in = TorqueAmplitude*sin(MotorOut.position) +1.2;
     //MotorIn.t_in = constrain(MotorIn.t_in, T_MAX, T_MAX);
     pack_cmd(MotorIn);
-    delay(10);
+    delay(5);
     MotorOut = unpack_reply();
     Serial.println(">>> Maintining P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
-    }
-  //Read IMU
-  IMUout = readIMU();
-  Serial.println("IMU Pitch: "+String(IMUout.pitch) + "IMU Roll"+ String(IMUout.roll));
+  }
 }
+
+    // read potentiometer to set torque amplitude
+    //float POT_reading = analogRead(POT); // between 0 to 1023
+    //TorqueAmplitude = map_float(POT_reading, 0, 1023, 0, 4);

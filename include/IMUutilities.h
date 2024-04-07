@@ -7,10 +7,6 @@
 
 Adafruit_MPU6050 mpu;
 
-struct IMU_data{
-  float pitch = 0.0f;
-  float roll = 0.0f;
-};
 
 void initializeIMU(){
   // Try to initialize!
@@ -24,33 +20,32 @@ void initializeIMU(){
 
   //set accelerometer range
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-  Serial.print("Accelerometer range set to: ");
   
   //set gyroscope range
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-  Serial.print("Gyro range set to: ");
   
   //set filter Bandwidth
-  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
-  Serial.print("Filter bandwidth set to: ");
+  mpu.setFilterBandwidth(MPU6050_BAND_10_HZ);
 
   delay(100);
 }
 
 
-struct IMU_data readIMU(){
-  struct IMU_data Imu_readings;
-  /* Get new sensor events with the readings */
+float readIMU(){
   sensors_event_t a, g, temp;
+  float pitch;
+  /* Get new sensor events with the readings */
   mpu.getEvent(&a, &g, &temp);
+  delay(100);
+  
 
   /* Calculate the pitch and roll angles */
   float ax = a.acceleration.x;
   float ay = a.acceleration.y;
   float az = a.acceleration.z;
 
-  Imu_readings.pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
-  Imu_readings.roll = atan2(ay, az) * 180.0 / M_PI;
+  pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
+  //Imu_readings.roll = atan2(ay, az) * 180.0 / M_PI;
 
-  return Imu_readings;
+  return pitch;
 }

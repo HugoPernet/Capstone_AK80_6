@@ -16,7 +16,7 @@
 #define T_MAX 10.0f
 
 //displacement step
-#define Step 0.01
+#define Step 0.05
 
 /// CAN parameters for motors ///
 
