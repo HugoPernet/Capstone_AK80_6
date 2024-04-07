@@ -49,15 +49,14 @@ void loop() {
       while (MotorOut.torque >= -StaticFirctionTroque){
         MotorIn.p_in = constrain(MotorIn.p_in - Step, P_MIN, P_MAX);
         pack_cmd(MotorIn);
-        delay(5);
         MotorOut = unpack_reply();
         Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out "+ String(MotorOut.velocity));
       } 
       //maintains position
       MotorIn.p_in = MotorOut.position;
-          MotorIn.t_in = -TorqueAmplitude*sin(radians(LegAngle)) -1.0;
+      MotorIn.t_in = -TorqueAmplitude*sin(radians(LegAngle)) -1.0;
+      MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
       pack_cmd(MotorIn);
-      delay(5);
       MotorOut = unpack_reply();
       Serial.println(">>> Maintining P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
   }
@@ -66,16 +65,14 @@ void loop() {
     while(abs(MotorOut.torque)<=StaticFirctionTroque){
       MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
       pack_cmd(MotorIn);
-      delay(5);
       MotorOut = unpack_reply();
       Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
     }
     //maintains position
     MotorIn.p_in = MotorOut.position;
     MotorIn.t_in = TorqueAmplitude*sin(MotorOut.position) +1.2;
-    //MotorIn.t_in = constrain(MotorIn.t_in, T_MAX, T_MAX);
+    MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
     pack_cmd(MotorIn);
-    delay(5);
     MotorOut = unpack_reply();
     Serial.println(">>> Maintining P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
   }

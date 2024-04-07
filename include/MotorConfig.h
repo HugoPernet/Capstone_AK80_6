@@ -12,8 +12,8 @@
 #define KP_MAX 500.0f
 #define KD_MIN 0.0f
 #define KD_MAX 5.0f
-#define T_MIN -10.0f
-#define T_MAX 10.0f
+#define T_MIN -8.0f
+#define T_MAX 8.0f
 
 //displacement step
 #define Step 0.05
