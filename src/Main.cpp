@@ -40,7 +40,7 @@ void setup() {
 
 void loop() {
     //Read IMU
-    LegAngle = readIMU();
+    LegAngle = -readIMU();
     Serial.println("Leg Angle : " + String(LegAngle));
 
     if(LegAngle >=30.0){
