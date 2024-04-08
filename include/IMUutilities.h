@@ -33,7 +33,7 @@ void initializeIMU(){
 
 float readIMU(){
   sensors_event_t a, g, temp;
-  float pitch;
+  //float pitch;
   /* Get new sensor events with the readings */
   mpu.getEvent(&a, &g, &temp);
   delay(100);

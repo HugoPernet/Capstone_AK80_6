@@ -2,7 +2,9 @@
 #include <potentiometerUtilities.h>
 #include <IMUutilities.h>
 
-#define POT 19 // pin number of potentiometer
+#define POT_K1 17 // pin number of potentiometer
+#define POT_K2 18
+#define POT3 19 // unused
 
 //////// Variable definition ////////
 
@@ -13,7 +15,7 @@ MotorReply MotorOut;
 float LegAngle = 0.0;
 
 //Mechanical constant:
-const float StaticFirctionTroque = 1.0;
+const float StaticFrictionTorque = 1.0;
 float TorqueAmplitude = 1.0;
 
 
@@ -28,30 +30,46 @@ void setup() {
 
   initializeIMU();
 
+  pinMode(POT_K1, INPUT);
+  pinMode(POT_K2, INPUT);
+  pinMode(POT3, INPUT);
+
   //Setup motor
   EnterMotorMode();
   delay(2000);
   SetZero();
   delay(2000);
-  
 }
 
-
+void slack_hip() {
+  while(abs(MotorOut.torque)<=StaticFrictionTorque){
+      //MotorIn.t_in = StaticFrictionTorque;
+      MotorIn.p_in = constrain(MotorIn.p_in - Step, P_MIN, P_MAX);
+      pack_cmd(MotorIn);
+      MotorOut = unpack_reply();
+      Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
+  }
+}
 
 void loop() {
     //Read IMU
-    LegAngle = -readIMU();
+    LegAngle = readIMU();
     Serial.println("Leg Angle : " + String(LegAngle));
+
+    //Read POTs
+    float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
+    float K1 = map_float(POT_reading1, 0, 1023, 4, 8);
+
+    float POT_reading2 = analogRead(POT_K2); // between 0 to 1023
+    float K2 = map_float(POT_reading2, 0, 1023, 0, 2);
+
+    //float POT_reading3 = analogRead(POT3);
+    Serial.println("    K1 = "+String(K1)+" A= "+String(K2));
 
     if(LegAngle >=30.0){
       Serial.println("leg mode");
       //move motor until it collides with the leg
-      while (MotorOut.torque >= -StaticFirctionTroque){
-        MotorIn.p_in = constrain(MotorIn.p_in - Step, P_MIN, P_MAX);
-        pack_cmd(MotorIn);
-        MotorOut = unpack_reply();
-        Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out "+ String(MotorOut.velocity));
-      } 
+      slack_hip;
       //maintains position
       MotorIn.p_in = MotorOut.position;
       MotorIn.t_in = -TorqueAmplitude*sin(radians(LegAngle)) -1.0;
@@ -62,7 +80,7 @@ void loop() {
   }
   else{
     //move motor until it collides with the pulley
-    while(abs(MotorOut.torque)<=StaticFirctionTroque){
+    while(abs(MotorOut.torque)<=StaticFrictionTorque){
       MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
       pack_cmd(MotorIn);
       MotorOut = unpack_reply();

@@ -2,8 +2,9 @@
 #include <potentiometerUtilities.h>
 #include <IMUutilities.h>
 
-#define POT_K_1 17 // pin number of potentiometer
-#define POT_A 18
+#define POT_K1 17 // pin number of potentiometer
+#define POT_K2 18
+#define POT3 19 // unused
 
 //////// Variable definition ////////
 
@@ -14,9 +15,9 @@ MotorReply MotorOut;
 float LegAngle = 0.0;
 
 //Mechanical constant:
-const float StaticFirctionTroque = 1.0;
-float K_1 = 1.5;
-float TorqueAmplitude = 2.0;
+const float StaticFrictionTorque = 1.0;
+float K1 = 1.5;
+float K2 = 2.0;
 
 
 void setup() {
@@ -30,8 +31,9 @@ void setup() {
 
   initializeIMU();
 
-  pinMode(POT_A, INPUT);
-  pinMode(POT_K_1, INPUT);
+  pinMode(POT_K1, INPUT);
+  pinMode(POT_K2, INPUT);
+  pinMode(POT3, INPUT);
 
   //Setup motor
   EnterMotorMode();
@@ -39,7 +41,8 @@ void setup() {
   SetZero();
   delay(2000);
 
-    while(abs(MotorOut.torque)<=StaticFirctionTroque){
+    while(abs(MotorOut.torque)<=StaticFrictionTorque){
+      //MotorIn.t_in = StaticFrictionTorque;
       MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
       pack_cmd(MotorIn);
       MotorOut = unpack_reply();
@@ -56,19 +59,22 @@ void loop() {
     //move motor until it collides with the pulley
 
     // read potentiometer to set torque amplitude
-    float POT_reading1 = analogRead(POT_K_1); // between 0 to 1023
-    K_1 = map_float(POT_reading1, 0, 1023, 0, 2);
+    float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
+    K1 = map_float(POT_reading1, 0, 1023, 4, 8);
 
-    float POT_reading2 = analogRead(POT_A); // between 0 to 1023
-    TorqueAmplitude = map_float(POT_reading2, 0, 1023, 4, 8);
-    Serial.println("K1 = "+String(K_1)+" A= "+String(TorqueAmplitude));
+    float POT_reading2 = analogRead(POT_K2); // between 0 to 1023
+    K2 = map_float(POT_reading2, 0, 1023, 0, 2);
+
+    //float POT_reading3 = analogRead(POT3);
+    Serial.println("    K1 = "+String(K1)+" A= "+String(K2));
 
     //maintains position
     MotorIn.p_in = MotorOut.position;
-    MotorIn.t_in = TorqueAmplitude*sin(MotorOut.position)+ K_1*MotorOut.velocity +0.5;//+MotorOut.velocity*K_1 +0.5;
+    MotorIn.t_in = K2*sin(MotorOut.position)+ K1*MotorOut.velocity +0.5;//+MotorOut.velocity*K1 +0.5;
+    //MotorIn.t_in = K1*atan(MotorOut.position)+K2*atan(MotorOut.velocity)+1.6;
     MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
     pack_cmd(MotorIn);
     MotorOut = unpack_reply();
-    Serial.println(">>> Maintining P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
+    Serial.println(">>> Maintaining P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
 }
 
