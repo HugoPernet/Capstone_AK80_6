@@ -39,13 +39,17 @@ float readIMU(){
   delay(100);
   
 
-  /* Calculate the pitch and roll angles */
-  float ax = a.acceleration.x;
-  float ay = a.acceleration.y;
-  float az = a.acceleration.z;
+  // /* Calculate the pitch and roll angles */
+  // float ax = a.acceleration.x;
+  // float ay = a.acceleration.y;
+  // float az = a.acceleration.z;
 
-  pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
+  float pitch = g.gyro.x;
+  float roll = g.gyro.y;
+  float yaw = g.gyro.z;
+
+  // pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
   //Imu_readings.roll = atan2(ay, az) * 180.0 / M_PI;
 
-  return pitch;
+  return yaw;
 }
