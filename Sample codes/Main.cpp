@@ -70,7 +70,7 @@ void loop() {
     }
     //maintains position
     MotorIn.p_in = MotorOut.position;
-    MotorIn.t_in = TorqueAmplitude*sin(MotorOut.position) +1.2;
+    MotorIn.t_in = TorqueAmplitude*sin(MotorOut.position) +1.0;
     MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
     pack_cmd(MotorIn);
     MotorOut = unpack_reply();
