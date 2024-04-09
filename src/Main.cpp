@@ -66,15 +66,16 @@ void loop() {
   float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
   float K1 = map_float(POT_reading1, 0, 1023, 2, 6); // Torque Amplitude (Proportional to Shoulder Angle)
   float POT_reading2 = analogRead(POT_C1); // between 0 to 1023
-  float C1 = map_float(POT_reading2, 0, 1023, 1, 3); // Proportional to Shoulder Velocity
+  float C1 = map_float(POT_reading2, 0, 1023, 2, 6); // Proportional to Shoulder Velocity
   float POT_reading3 = analogRead(POT_D1);
-  float D1 = map_float(POT_reading3, 0, 1023, 1, 6);
+  float D1 = map_float(POT_reading3, 0, 1023, 2, 6);
   Serial.print(" K1 = "+String(K1)+" C1 = "+String(C1)+ " D1 =" + String(D1));
 
   //maintains position
   MotorIn.p_in = MotorOut.position;
   //MotorIn.t_in = TorqueAmplitude*sin(MotorOut.position) +1.0;
-  float c = 0.7*(K1+C1+D1)*3.14/2; // c ensures MotorIn.t_in > 0
+  //float c = 0.7*(K1+C1+D1)*3.14/2; // c ensures MotorIn.t_in > 0
+  float c = 0;
   MotorIn.t_in = K1*atan(K2*MotorOut.position) + C1*atan(C2*MotorOut.velocity) - D1*atan(D2*LegAngle)+c;
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
   pack_cmd(MotorIn);
