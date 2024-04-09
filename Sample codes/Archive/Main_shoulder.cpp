@@ -70,8 +70,9 @@ void loop() {
 
     //maintains position
     MotorIn.p_in = MotorOut.position;
-    MotorIn.t_in = K2*sin(MotorOut.position)+ K1*MotorOut.velocity +0.5;//+MotorOut.velocity*K1 +0.5;
-    //MotorIn.t_in = K1*atan(MotorOut.position)+K2*atan(MotorOut.velocity)+1.6;
+    //MotorIn.t_in = K2*sin(MotorOut.position)+ K1*MotorOut.velocity +0.5;//+MotorOut.velocity*K1 +0.5;
+    float c = max(K1, K2)*3.14/2; // c ensures MotorIn.t_in > 0
+    MotorIn.t_in = K1*atan(MotorOut.position)+K2*atan(MotorOut.velocity)+c;
     MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
     pack_cmd(MotorIn);
     MotorOut = unpack_reply();
