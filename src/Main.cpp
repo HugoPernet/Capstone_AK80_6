@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include <MotorUtilities.h>
 #include <potentiometerUtilities.h>
 #include <IMUutilities.h>
@@ -6,22 +7,36 @@
 #define POT_C1 18
 #define POT_D1 19 // 
 
+#define IMU_RESET_BTN 27 // IMU reset button
+
 //////// Variable definition ////////
 
-// intialise Motor command and Motor reply variables
+// initialize Motor command and Motor reply variables
 MotorCommand MotorIn;
 MotorReply MotorOut;
-// intialise IMU Data
+
+// initialize IMU Data
 float LegVel = 0.0;
 float LegAngle = 0.0;
 float dt = 100;
-float Leg_Vel_Initial = 0.0;
+float meanx0 = 0.0;
 
 //Mechanical constant:
 const float StaticFrictionTorque = 1.0;
 float TorqueAmplitude = 1.0;
 float K2, C2, D2 = 0.1;
 
+// initialize button
+int IMU_BTN_STATE = 0;
+int a = 0;
+
+void isr() {  // the function to be called when interrupt is triggered
+  unsigned long debounceDelay = 200;
+  unsigned long myTime=millis();
+  while(millis() - myTime < debounceDelay){
+  }
+  IMU_BTN_STATE = 1;
+}
 
 void setup() {
   //starts Serial Com
@@ -32,11 +47,15 @@ void setup() {
   SetupCan();
   delay(1000);
 
-  Leg_Vel_Initial = initializeIMU();
-
   pinMode(POT_K1, INPUT);
   pinMode(POT_C1, INPUT);
   pinMode(POT_D1, INPUT);
+
+  //button for IMU zero
+  pinMode(IMU_RESET_BTN, INPUT);
+  attachInterrupt(IMU_RESET_BTN, isr, RISING);
+
+  meanx0 = initializeIMU();
 
   //Setup motor
   EnterMotorMode();
@@ -55,11 +74,21 @@ void slack_hip() {
   }
 }
 
+
+
 void loop() {
   float time_now = millis();
+  
+  //Zero IMU reading
+  if (a == 1) {
+    LegAngle = 0;
+    a = 0;
+  }
 
   //Read IMU
-  LegVel = -(readIMU()-Leg_Vel_Initial);
+  LegVel = -(readIMU()-meanx0)*100;
+  LegVel = int(round(LegVel)); //removing insignificant digits
+  LegVel = float(LegVel)/100;
   LegAngle = fmod(LegAngle + (LegVel*dt)*0.001*180/PI, 360);
   
   //Read POTs

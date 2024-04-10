@@ -4,9 +4,10 @@ float LegVel = 0;
 float LegAngle = 0;
 float initializetime1 = 1000;
 float initializetime2 = 5000;
-float dt = 50;
+float dt = 10;
 float Leg_Vel_Initial = 0;
 int count = 1;
+float Angles = {};
 
 void setup() {
     float time_now = millis();
@@ -31,8 +32,9 @@ void loop() {
 
     //Read IMU
     LegVel = readIMU()-Leg_Vel_Initial;
-    LegAngle = fmod(LegAngle + (LegVel*dt)*0.001, 2*PI);
+    LegAngle = fmod(LegAngle + (LegVel*dt)*0.001*180/PI, 360);
     Serial.println("Leg Vel: " + String(LegVel)+" Leg Angle: " + String(LegAngle));
+    Angles = {Angles, LegAngle};
 
     while (millis()-time_now < dt) {}
 }
