@@ -51,12 +51,6 @@ void setup() {
   pinMode(POT_C1, INPUT);
   pinMode(POT_D1, INPUT);
 
-  //button for IMU zero
-  // pinMode(IMU_RESET_BTN, INPUT);
-  // attachInterrupt(IMU_RESET_BTN, isr, RISING);
-
-  meanx0 = initializeIMU();
-
   //Setup motor
   EnterMotorMode();
   delay(2000);
