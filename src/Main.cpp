@@ -6,8 +6,9 @@
 #define POT_K1 17 // pin number of potentiometer
 #define POT_C1 18
 #define POT_D1 19 // 
+#define POT_B1 16 
 
-#define IMU_RESET_BTN 27 // IMU reset button
+#define IMU_RESET_BTN 9 // IMU reset button
 
 //////// Variable definition ////////
 
@@ -28,7 +29,7 @@ float K2, C2, D2 = 0.1;
 
 // initialize button
 int IMU_BTN_STATE = 0;
-int a = 0;
+// int a = 0;
 
 void isr() {  // the function to be called when interrupt is triggered
   unsigned long debounceDelay = 200;
@@ -50,10 +51,11 @@ void setup() {
   pinMode(POT_K1, INPUT);
   pinMode(POT_C1, INPUT);
   pinMode(POT_D1, INPUT);
+  pinMode(POT_B1, INPUT);
 
   //button for IMU zero
   pinMode(IMU_RESET_BTN, INPUT);
-  attachInterrupt(IMU_RESET_BTN, isr, RISING);
+  // attachInterrupt(IMU_RESET_BTN, isr, RISING);
 
   meanx0 = initializeIMU();
 
@@ -79,10 +81,11 @@ void slack_hip() {
 void loop() {
   float time_now = millis();
   
+  IMU_BTN_STATE = analogRead(IMU_RESET_BTN);
   //Zero IMU reading
-  if (a == 1) {
+  if (IMU_BTN_STATE == 1) {
     LegAngle = 0;
-    a = 0;
+    // a = 0;
   }
 
   //Read IMU
@@ -92,6 +95,8 @@ void loop() {
   LegAngle = fmod(LegAngle + (LegVel*dt)*0.001*180/PI, 360);
   
   //Read POTs
+  float POT_reading0 = analogRead(POT_B1);
+  float K2, C2, D2 = map_float(POT_reading0, 0, 1023, 0.05, 0.3);
   float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
   float K1 = map_float(POT_reading1, 0, 1023, 2, 6); // Torque Amplitude (Proportional to Shoulder Angle)
   float POT_reading2 = analogRead(POT_C1); // between 0 to 1023
