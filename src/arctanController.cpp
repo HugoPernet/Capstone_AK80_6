@@ -10,13 +10,13 @@ MotorCommand MotorIn;
 MotorReply MotorOut;
 Joint_origines origines;
 
-// intialise IMU Data
-float LegAngle = 0.0;
 
 //Mechanical constant:
 const float StaticFirctionTroque = 1.0;
 float K_1 = 1.5;
 float TorqueAmplitude = 2.0;
+
+float truncAngle;
 
 
 
@@ -28,6 +28,9 @@ void setup() {
   //starts Can com
   SetupCan();
   delay(1000);
+
+  // imu
+  initializeIMU();
 
   //Setup motor
   EnterMotorMode();
@@ -43,7 +46,14 @@ void setup() {
 
 
 void loop() {
+    truncAngle = readIMU();
+    
+    //move motor until it collides with the pulley
+    MotorIn.p_in = MotorOut.position;
+    MotorIn.t_in = -2.0;
+    MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
+    pack_cmd(MotorIn);
+    Serial.println(MotorOut.position-origines.leg);
     MotorOut = unpack_reply();
-    Serial.println(" origine leg: "+String(origines.leg)+ " origine shoulder: "+String(origines.shoulder)+ " current pos: "+String(MotorOut.position));
-    delay(2000);
-}
+    Serial.println(">>>  P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" imu"+ String(truncAngle));
+  }

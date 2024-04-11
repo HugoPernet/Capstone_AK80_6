@@ -187,10 +187,8 @@ Joint_origines Homing(MotorReply reply,float threshold,MotorCommand command){
       reply = unpack_reply();
       command.p_in = constrain(command.p_in + Step, P_MIN, P_MAX);
       pack_cmd(command);
-      delay(20);
+      delay(10);
     }
-    delay(1000);
-    SetZero();
     delay(1000);
     return origine;
 }

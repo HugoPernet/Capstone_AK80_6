@@ -47,8 +47,8 @@ float readIMU(){
   float roll = g.gyro.y;
   float yaw = g.gyro.z;
 
-  pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
-  //Imu_readings.roll = atan2(ay, az) * 180.0 / M_PI;
+  roll = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
+  pitch = atan2(ay, az) * 180.0 / M_PI;
 
   return pitch;
 }
