@@ -21,6 +21,7 @@
 // initialize Motor command and Motor reply variables
 MotorCommand MotorIn;
 MotorReply MotorOut;
+Joint_origines origines;
 
 // initialize IMU Data
 float HipVel = 0.0;
@@ -50,35 +51,35 @@ void isr() {  // the function to be called when interrupt is triggered
   IMU_BTN_STATE = 1;
 }
 
-float homing() {
-  while(MotorOut.torque< StaticFrictionTorque){
-      MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
-      pack_cmd(MotorIn);
-      MotorOut = unpack_reply();
-      Serial.println("P_out:"+String(MotorOut.position*180/PI)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity*180/PI));
-  }
-  P0_shoulder = MotorOut.position*180/PI;
+// float homing() {
+//   while(MotorOut.torque< StaticFrictionTorque){
+//       MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
+//       pack_cmd(MotorIn);
+//       MotorOut = unpack_reply();
+//       Serial.println("P_out:"+String(MotorOut.position*180/PI)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity*180/PI));
+//   }
+//   P0_shoulder = MotorOut.position*180/PI;
 
-  while(MotorOut.torque>= -0.5*StaticFrictionTorque){
-      MotorIn.p_in = constrain(MotorIn.p_in - Step, P_MIN, P_MAX);
-      pack_cmd(MotorIn);
-      MotorOut = unpack_reply();
-      Serial.println("P_out:"+String(MotorOut.position*180/PI)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity*180/PI));
-  }
-  P0_hip = MotorOut.position*180/PI;
-  Serial.println("Homing P0_shoulder, P0_hip complete");
-  P0_midpt = abs((P0_shoulder-P0_hip)/2); // in degrees
+//   while(MotorOut.torque>= -0.5*StaticFrictionTorque){
+//       MotorIn.p_in = constrain(MotorIn.p_in - Step, P_MIN, P_MAX);
+//       pack_cmd(MotorIn);
+//       MotorOut = unpack_reply();
+//       Serial.println("P_out:"+String(MotorOut.position*180/PI)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity*180/PI));
+//   }
+//   P0_hip = MotorOut.position*180/PI;
+//   Serial.println("Homing P0_shoulder, P0_hip complete");
+//   P0_midpt = abs((P0_shoulder-P0_hip)/2); // in degrees
 
-  while(abs(MotorOut.position*180/PI - (P0_hip+P0_midpt)) >= 3) {
-    MotorIn.p_in = constrain(MotorIn.p_in + 0.01, P_MIN, P_MAX);
-    pack_cmd(MotorIn);
-    MotorOut = unpack_reply();
-    delay(10);
-  }
-  Serial.println("midpoint = " +String(P0_midpt));
-  delay(2000);
-  return P0_midpt;
-}
+//   while(abs(MotorOut.position*180/PI - (P0_hip+P0_midpt)) >= 3) {
+//     MotorIn.p_in = constrain(MotorIn.p_in + 0.01, P_MIN, P_MAX);
+//     pack_cmd(MotorIn);
+//     MotorOut = unpack_reply();
+//     delay(10);
+//   }
+//   Serial.println("midpoint = " +String(P0_midpt));
+//   delay(2000);
+//   return P0_midpt;
+// }
 
 void setup() {
   //starts Serial Com
@@ -106,15 +107,17 @@ void setup() {
   //Setup motor
   EnterMotorMode(); delay(50);
   SetZero(); delay(50);
-  homing(); delay(50);
+  MotorOut = unpack_reply();
+  P0_midpt = Homing(MotorOut,1.0,MotorIn);
+  //homing(); delay(50);
   SetZero(); delay(500);
 
-  while(MotorOut.torque< StaticFrictionTorque){
-      MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
-      pack_cmd(MotorIn);
-      MotorOut = unpack_reply();
-      Serial.println("P_out:"+String(MotorOut.position*180/PI)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity*180/PI));
-  }
+  // while(MotorOut.torque< StaticFrictionTorque){
+  //     MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
+  //     pack_cmd(MotorIn);
+  //     MotorOut = unpack_reply();
+  //     Serial.println("P_out:"+String(MotorOut.position*180/PI)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity*180/PI));
+  // }
   Serial.println("Zeroed and Homed at Midpoint of shoulder & hip");
   delay(1000);
 }
