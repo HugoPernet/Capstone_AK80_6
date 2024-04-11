@@ -24,17 +24,17 @@ float readIMU(){
   return pitch;
 }
 
-float readgyro() {
-  sensors_event_t a, g, temp;
-  //float pitch;
-  /* Get new sensor events with the readings */
-  mpu.getEvent(&a, &g, &temp);
+// float readgyro() {
+//   sensors_event_t a, g, temp;
+//   //float pitch;
+//   /* Get new sensor events with the readings */
+//   mpu.getEvent(&a, &g, &temp);
 
-  float pitch_rate = g.gyro.x;
-  // float roll = g.gyro.y;
-  // float yaw = g.gyro.z;
-  return pitch_rate;
-}
+//   float pitch_rate = g.gyro.x;
+//   // float roll = g.gyro.y;
+//   // float yaw = g.gyro.z;
+//   return pitch_rate;
+// }
 
 float calculateMean(float arr[], int size) {
     float sum = 0;
@@ -66,7 +66,7 @@ void firstrun() {
     for (int i = 0; i < countersize; i++) {
         long time_now = millis();
         LegAngle = fmod(readIMU(),360);
-        LegVel = fmod(readgyro()*180/PI,360);
+        // LegVel = fmod(readgyro()*180/PI,360);
         //LegVel = readIMU()-Leg_Vel_Initial;
         //LegAngle = fmod(LegAngle + (LegVel*dt)*0.001*180/PI, 360);
         Angles[i] = LegAngle;
@@ -77,7 +77,7 @@ void firstrun() {
     }
 }
 
-void initializeIMU(){
+float initializeIMU(){
   // Try to initialize!
   if (!mpu.begin()) {
     Serial.println("Failed to find MPU6050 chip");
@@ -109,20 +109,13 @@ void initializeIMU(){
   }
   //measure bias
   firstrun();
-  
+  float bias_pitch = calculateMean(Angles, countersize);
+
   Serial.println("Pitch Zeroed");
   delay(200);
-}
-
-float get_bias_pitch() {
-  float bias_pitch = calculateMean(Angles, countersize);
   return bias_pitch;
 }
 
-float get_bias_pitch_rate() {
-  float bias_pitch_rate = calculateMean(Velocities, countersize);
-  return bias_pitch_rate;
-}
 // // Basic demo for accelerometer readings from Adafruit MPU6050
 // #include <Arduino.h>
 // #include <Adafruit_MPU6050.h>
