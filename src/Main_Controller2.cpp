@@ -133,11 +133,11 @@ void loop() {
   float B2 = map_float(POT_reading0, 0, 1023, 1, 10);
   //K2, C2, D2 = B2*0.1;
   float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
-  float K1 = map_float(POT_reading1, 0, 1023, 3, 20); // Torque Amplitude (Proportional to Shoulder Angle)
+  float K1 = map_float(POT_reading1, 0, 1023, 0.5, 3); // Torque Amplitude (Proportional to Shoulder Angle)
   float POT_reading2 = analogRead(POT_C1); // between 0 to 1023
-  float C1 = map_float(POT_reading2, 0, 1023, 2,10); // Proportional to Shoulder Velocity
+  float C1 = map_float(POT_reading2, 0, 1023, 0.5, 3); // Proportional to Shoulder Velocity
   float POT_reading3 = analogRead(POT_D1);
-  float D1 = map_float(POT_reading3, 0, 1023, 3,20);
+  float D1 = map_float(POT_reading3, 0, 1023, 0.5, 3);
   //Serial.print("    B1 = " + String(POT_reading0) + " K1 = "+String(K1)+" C1 = "+String(C1)+ " D1 =" + String(D1));
   Serial.print("    K1 = "+String(K1)+" C1 = "+String(C1)+ " D1 =" + String(D1) + "B2 = " + String(K2));
 
@@ -149,7 +149,8 @@ void loop() {
   //maintains position
   MotorIn.p_in = MotorOut.position;
   float c = 1;
-  MotorIn.t_in = K1*atan(K2*MotorOut.position) + C1*atan(C2*MotorOut.velocity) - D1*atan(D2*radians(HipAngle));
+  float K2 = 0.3; C2 = 0.1; D2 = 0.2;
+  MotorIn.t_in = K1*atan(K2*(MotorOut.position-P0_midpt)*180/PI) + C1*atan(C2*MotorOut.velocity) - D1*atan(D2*HipAngle);
   float motor_torque = AmpH*atan(MotorOut.position-P0_midpt)+AmpS*atan(MotorOut.position+P0_midpt)-2*AmpSF*atan(-HipAngle-10);
 
   //test torque
