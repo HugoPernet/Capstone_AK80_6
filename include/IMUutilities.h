@@ -24,17 +24,17 @@ float readIMU(){
   return pitch;
 }
 
-// float readgyro() {
-//   sensors_event_t a, g, temp;
-//   //float pitch;
-//   /* Get new sensor events with the readings */
-//   mpu.getEvent(&a, &g, &temp);
+float readgyro() {
+  sensors_event_t a, g, temp;
+  //float pitch;
+  /* Get new sensor events with the readings */
+  mpu.getEvent(&a, &g, &temp);
 
-//   float pitch_rate = g.gyro.x;
-//   // float roll = g.gyro.y;
-//   // float yaw = g.gyro.z;
-//   return pitch_rate;
-// }
+  float pitch_rate = g.gyro.x * 180/PI; //deg/s
+  // float roll = g.gyro.y;
+  // float yaw = g.gyro.z;
+  return pitch_rate;
+}
 
 float calculateMean(float arr[], int size) {
     float sum = 0;
