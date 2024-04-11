@@ -48,21 +48,20 @@ void setup() {
 
 void loop() {
     truncAngle = round(readIMU()+82);
-    
-    //move motor until it collides with the pulley
-    MotorIn.p_in = MotorOut.position;
-    MotorIn.t_in = 1.0;
-    MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
-    pack_cmd(MotorIn);
-    Serial.println("leg real angle = "+ String(MotorOut.position-origines.leg));
-    Serial.println("leg real Leg = "+ String(MotorOut.position-origines.shoulder));
+    MotorOut = unpack_reply();
 
     float shoulder = TorqueAmplitude*(1/M_PI)*atan(degrees(MotorOut.position-origines.shoulder)-10)+TorqueAmplitude/2 + StaticFirctionTroque;
     float leg = TorqueAmplitude*(1/M_PI)*atan(degrees(MotorOut.position-origines.leg) +20) - TorqueAmplitude/2 - StaticFirctionTroque;
     float switching = -2*StaticFirctionTroque*(1/M_PI)*atan((truncAngle-10));
 
-    Serial.println("shoulder T: "+String(shoulder)+ " Leg T:"+String(leg)+" imu T: "+ String(switching));
+    float total_torque = shoulder+leg+switching;
+    
+    // apply torque
+    MotorIn.p_in = MotorOut.position;
+    MotorIn.t_in = 1.0; // to edit
+    MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
+    pack_cmd(MotorIn);
 
-    MotorOut = unpack_reply();
-    Serial.println(">>>  P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" imu"+ String(truncAngle));
+    Serial.println("Ts: "+String(shoulder)+ " Tl:"+String(leg)+" Timu: "+ String(switching)+" tot: "+ String(total_torque));
+    Serial.println("leg real angle = "+ String(MotorOut.position-origines.leg) + "Shoulder real = "+ String(MotorOut.position-origines.shoulder)+" imu"+ String(truncAngle));
   }
