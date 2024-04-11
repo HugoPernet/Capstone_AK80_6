@@ -57,8 +57,8 @@ void loop() {
     Serial.println("leg real angle = "+ String(MotorOut.position-origines.leg));
     Serial.println("leg real Leg = "+ String(MotorOut.position-origines.shoulder));
 
-    float shoulder = TorqueAmplitude*(1/M_PI)*atan(degrees(MotorOut.position-origines.shoulder)-10)+TorqueAmplitude/2;
-    float leg = TorqueAmplitude*(1/M_PI)*atan(degrees(MotorOut.position-origines.leg) +20) - TorqueAmplitude/2;
+    float shoulder = TorqueAmplitude*(1/M_PI)*atan(degrees(MotorOut.position-origines.shoulder)-10)+TorqueAmplitude/2 + StaticFirctionTroque;
+    float leg = TorqueAmplitude*(1/M_PI)*atan(degrees(MotorOut.position-origines.leg) +20) - TorqueAmplitude/2 - StaticFirctionTroque;
     float switching = -2*StaticFirctionTroque*(1/M_PI)*atan((truncAngle-10));
 
     Serial.println("shoulder T: "+String(shoulder)+ " Leg T:"+String(leg)+" imu T: "+ String(switching));
