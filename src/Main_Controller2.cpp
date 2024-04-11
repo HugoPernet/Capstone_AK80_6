@@ -51,7 +51,7 @@ void isr() {  // the function to be called when interrupt is triggered
 }
 
 float homing() {
-  while(MotorOut.torque< 1.1*StaticFrictionTorque){
+  while(MotorOut.torque< StaticFrictionTorque){
       MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
       pack_cmd(MotorIn);
       MotorOut = unpack_reply();
@@ -59,7 +59,7 @@ float homing() {
   }
   P0_shoulder = MotorOut.position*180/PI;
 
-  while(MotorOut.torque>= -0.8*StaticFrictionTorque){
+  while(MotorOut.torque>= -0.5*StaticFrictionTorque){
       MotorIn.p_in = constrain(MotorIn.p_in - Step, P_MIN, P_MAX);
       pack_cmd(MotorIn);
       MotorOut = unpack_reply();
@@ -67,7 +67,7 @@ float homing() {
   }
   P0_hip = MotorOut.position*180/PI;
   Serial.println("Homing P0_shoulder, P0_hip complete");
-  P0_midpt = abs((P0_shoulder+P0_hip)/2);
+  P0_midpt = abs((P0_shoulder-P0_hip)/2); // in degrees
 
   while(abs(MotorOut.position*180/PI - (P0_hip+P0_midpt)) >= 3) {
     MotorIn.p_in = constrain(MotorIn.p_in + 0.01, P_MIN, P_MAX);
@@ -145,11 +145,11 @@ void loop() {
 
     //Torque Slopes
   float POT_reading4 = analogRead(POT_K2);
-  float K2 = map_float(POT_reading4, 0, 1023, 0.1,0.5); // Shoulder Angle ~0.3
+  float K2 = map_float(POT_reading4, 0, 1023, 0.05,0.5); // Shoulder Angle ~0.3
   float POT_reading5 = analogRead(POT_C2);
   float C2 = map_float(POT_reading5, 0, 1023, 0.05,0.15); // Shoulder Velocity ~0.05
   float POT_reading6 = analogRead(POT_D2);
-  float D2 = map_float(POT_reading6, 0, 1023, 0.1,0.5); //Hip Angle, ~0.2
+  float D2 = map_float(POT_reading6, 0, 1023, 0.05,0.5); //Hip Angle, ~0.2
   Serial.print("    K1: "+String(K1)+" C1: "+String(C1)+ " D1:" + String(D1) + " K2: " + String(K2)+" C2: "+String(C2)+" D2: "+String(D2));
 
   //maintains position
