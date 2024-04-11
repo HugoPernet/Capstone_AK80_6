@@ -65,10 +65,10 @@ void firstrun() {
   Serial.println("Calibrating IMU...");
     for (int i = 0; i < countersize; i++) {
         long time_now = millis();
-        LegAngle = fmod(readIMU(),360);
-        // LegVel = fmod(readgyro()*180/PI,360);
-        //LegVel = readIMU()-Leg_Vel_Initial;
-        //LegAngle = fmod(LegAngle + (LegVel*dt)*0.001*180/PI, 360);
+        LegAngle = readIMU();
+        LegVel = readgyro();
+        // LegVel = readIMU()-Leg_Vel_Initial;
+        // LegAngle = fmod(LegAngle + (LegVel*dt)*0.001*180/PI, 360);
         Angles[i] = LegAngle;
         Velocities[i] = LegVel;
         //Serial.println("Leg Angle = ");
@@ -110,10 +110,11 @@ float initializeIMU(){
   //measure bias
   firstrun();
   float bias_pitch = calculateMean(Angles, countersize);
+  float bias_pitch_rate = calculateMean(Velocities, countersize);
 
   Serial.println("Pitch Zeroed");
   delay(200);
-  return bias_pitch;
+  return bias_pitch, bias_pitch_rate;
 }
 
 // // Basic demo for accelerometer readings from Adafruit MPU6050

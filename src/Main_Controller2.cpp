@@ -55,21 +55,21 @@ float homing() {
       MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
       pack_cmd(MotorIn);
       MotorOut = unpack_reply();
-      Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
+      Serial.println("P_out:"+String(MotorOut.position*180/PI)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity*180/PI));
   }
-  P0_shoulder = MotorOut.position;
+  P0_shoulder = MotorOut.position*180/PI;
 
   while(MotorOut.torque>= -0.8*StaticFrictionTorque){
       MotorIn.p_in = constrain(MotorIn.p_in - Step, P_MIN, P_MAX);
       pack_cmd(MotorIn);
       MotorOut = unpack_reply();
-      Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
+      Serial.println("P_out:"+String(MotorOut.position*180/PI)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity*180/PI));
   }
-  P0_hip = MotorOut.position;
+  P0_hip = MotorOut.position*180/PI;
   Serial.println("Homing P0_shoulder, P0_hip complete");
   P0_midpt = abs((P0_shoulder+P0_hip)/2);
 
-  while(abs(MotorOut.position - (P0_hip+P0_midpt)) >= 0.05) {
+  while(abs(MotorOut.position*180/PI - (P0_hip+P0_midpt)) >= 3) {
     MotorIn.p_in = constrain(MotorIn.p_in + 0.01, P_MIN, P_MAX);
     pack_cmd(MotorIn);
     MotorOut = unpack_reply();
@@ -113,7 +113,7 @@ void setup() {
       MotorIn.p_in = constrain(MotorIn.p_in + Step, P_MIN, P_MAX);
       pack_cmd(MotorIn);
       MotorOut = unpack_reply();
-      Serial.println("P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity));
+      Serial.println("P_out:"+String(MotorOut.position*180/PI)+ " torque:"+String(MotorOut.torque)+" V_out"+ String(MotorOut.velocity*180/PI));
   }
   Serial.println("Zeroed and Homed at Midpoint of shoulder & hip");
   delay(1000);
@@ -147,14 +147,14 @@ void loop() {
   float POT_reading4 = analogRead(POT_K2);
   float K2 = map_float(POT_reading4, 0, 1023, 0.1,0.5); // Shoulder Angle ~0.3
   float POT_reading5 = analogRead(POT_C2);
-  float C2 = map_float(POT_reading5, 0, 1023, 0.1,0.5); // Shoulder Velocity ~0.1
+  float C2 = map_float(POT_reading5, 0, 1023, 0.05,0.15); // Shoulder Velocity ~0.05
   float POT_reading6 = analogRead(POT_D2);
   float D2 = map_float(POT_reading6, 0, 1023, 0.1,0.5); //Hip Angle, ~0.2
   Serial.print("    K1: "+String(K1)+" C1: "+String(C1)+ " D1:" + String(D1) + " K2: " + String(K2)+" C2: "+String(C2)+" D2: "+String(D2));
 
   //maintains position
   MotorIn.p_in = MotorOut.position;
-  MotorIn.t_in = K1*atan(K2*(MotorOut.position-P0_midpt)*180/PI) + C1*atan(C2*MotorOut.velocity) - D1*atan(D2*HipAngle);
+  MotorIn.t_in = K1*atan(K2*(MotorOut.position*180/PI-P0_midpt)*180/PI) + C1*atan(C2*MotorOut.velocity*180/PI) - D1*atan(D2*HipAngle);
   //MotorIn.t_in = 0;
 
   //test torque
@@ -162,12 +162,12 @@ void loop() {
   float shoulder = As*(1/PI)*atan((MotorOut.position*180/PI-midpoint)-10);
   float leg = Al*(1/PI)*atan((MotorOut.position*180/PI+midpoint)+20);
   float switching = -2*Ss*(1/PI)*atan(HipAngle-10);
-  float test_torque = shoulder + leg + switching;
+  float test_torque = shoulder + leg + switching; //"T_test: " + String(test_torque)+
   
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
-  Serial.println(" T_in: " + String(MotorIn.t_in) + "T_test: " + String(test_torque)+ "   MEASURING:  Hip_A: " + String(HipAngle)+ " Hip_V: " + String(HipVel)+" P_out:"+String(MotorOut.position-P0_midpt)+ " t_out:"+String(MotorOut.torque)+" v_out"+ String(MotorOut.velocity));
+  Serial.println(" T_in: " + String(MotorIn.t_in) +  "   MEASURING:  Hip_A: " + String(HipAngle)+ " Hip_V: " + String(HipVel)+" P_out:"+String(MotorOut.position*180/PI-P0_midpt)+ " t_out:"+String(MotorOut.torque)+" v_out"+ String(MotorOut.velocity*180/PI));
 
   while (millis()-time_now < dt) {}
 }

@@ -142,8 +142,8 @@ struct MotorReply unpack_reply() {
   unsigned int i_int = ((buf[4] & 0xf) << 8) | buf[5];
 
   reply.position = uint_to_float(p_int, P_MIN, P_MAX, 16);
-  reply.velocity = uint_to_float(v_int, V_MIN, V_MAX, 12)*180/PI; //deg/s
-  reply.torque = uint_to_float(i_int, -T_MAX, T_MAX, 12)*180/PI; //degrees
+  reply.velocity = uint_to_float(v_int, V_MIN, V_MAX, 12); //rad/s
+  reply.torque = uint_to_float(i_int, -T_MAX, T_MAX, 12); //rad
 
   return reply;
 }
