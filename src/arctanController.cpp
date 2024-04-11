@@ -46,15 +46,15 @@ void setup() {
 
 
 void loop() {
-    truncAngle = readIMU();
+    truncAngle = round(readIMU()+82);
     
     //move motor until it collides with the pulley
     MotorIn.p_in = MotorOut.position;
     MotorIn.t_in = -2.0;
     MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
     pack_cmd(MotorIn);
-    Serial.println(MotorOut.position-origines.leg);
-    Serial.println(MotorOut.position-origines.shoulder);
+    Serial.println("leg real angle = "+ String(MotorOut.position-origines.leg));
+    Serial.println("leg real Leg = "+ String(MotorOut.position-origines.shoulder));
     MotorOut = unpack_reply();
     Serial.println(">>>  P_out:"+String(MotorOut.position)+ " torque:"+String(MotorOut.torque)+" imu"+ String(truncAngle));
   }
