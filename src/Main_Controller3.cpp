@@ -93,21 +93,22 @@ void loop() {
   //Read IMU
   HipAngle = (round(readIMU())-bias_pitch.angle)-2.0; //deg
   HipVel = readgyro()-bias_pitch.velocity;
+
+  MotorIn.kp_in = 0.0;
   
   //Read POTs
-    //Torque Amplitudes
-  float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
-  float K1 = map_float(POT_reading1, 0, 1023, 0.5, 3); // Shoulder Angle
-  float POT_reading2 = analogRead(POT_C1); // between 0 to 1023
-  float C1 = map_float(POT_reading2, 0, 1023, 0.5, 3); // Shoulder Velocity
-  float POT_reading3 = analogRead(POT_D1);
-  float D1 = map_float(POT_reading3, 0, 1023, 0.5, 3); // Hip Angle
+  //float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
+  //float K1 = map_float(POT_reading1, 0, 1023, 0.5, 3); // Shoulder Angle
+  //float POT_reading2 = analogRead(POT_C1); // between 0 to 1023
+  //float C1 = map_float(POT_reading2, 0, 1023, 0.5, 3); // Shoulder Velocity
+  //float POT_reading3 = analogRead(POT_D1);
+  //float D1 = map_float(POT_reading3, 0, 1023, 0.5, 3); // Hip Angle
 
-  MotorIn.kp_in = K1;
-  MotorIn.kd_in = C1;
-  Serial.print("    K1: "+String(K1)+" C1: "+String(C1));
+  //MotorIn.kp_in = K1;
+  //MotorIn.kd_in = C1;
+  //Serial.print("    K1: "+String(K1)+" C1: "+String(C1));
 
-    //Torque Slopes
+  //Torque Slopes
   float POT_reading4 = analogRead(POT_K2);
   float K2 = map_float(POT_reading4, 0, 1023, 0.05,0.5); // Shoulder Angle ~0.3
   float POT_reading5 = analogRead(POT_C2);
@@ -119,28 +120,33 @@ void loop() {
   //maintains position
   MotorIn.p_in = MotorOut.position;
 
+
   // Torque Eq before figuring out motor position moves positive when bending
   // float As = 2; float Al = 2; float Ss = 1;
   // float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-20) + As/2 + Ss;
   // float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+20) - As/2 - Ss;
   // float switching = -2*Ss*(1/PI)*atan(HipAngle-20);
   // MotorIn.t_in = shoulder + leg + switching;
-
+  float Akd =1;
+  float Slack = abs(origines.shoulder-origines.leg);
   // Torque Eq
   float As = 2; float Al = 1; float Ss = 1;
   float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-10) + As/2;
   float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+10) - As/2 - 2*Ss + 1;
   float switching = -4*(1/PI)*atan(HipAngle-20)+1;
-  MotorIn.t_in = shoulder + leg + switching;
+  float KD = Akd*cos((2*PI/Slack)*(MotorOut.position - origines.leg)) + Akd + 0.2;
+  
 
+
+  MotorIn.t_in = shoulder + leg + switching;
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
+  MotorIn.kd_in = KD;
 
   //pack & unpack msgs
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
-  Serial.print("  T_out: "+String(MotorOut.torque));
-  Serial.print("  T_in: " + String(MotorIn.t_in) +"  shoulder: "+String(shoulder)+"  leg: "+String(leg)+ "  switching " + String(switching));
-  Serial.println("    MEASURING:  IMU_Ang: " + String(HipAngle)+  "  P_out: "+String(degrees(MotorOut.position)));
+  //Serial.print("  T_in: " + String(MotorIn.t_in) +"  shoulder: "+String(shoulder)+"  leg: "+String(leg)+ "  switching " + String(switching));
+  Serial.println("    MEASURING:  IMU_Ang: " + String(HipAngle)+  "  P_out: "+String(degrees(MotorOut.position))+ "  Kd: "+String(KD));
 
 
   while (millis()-time_now < dt) {}
