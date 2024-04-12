@@ -1,6 +1,7 @@
 //Edits from Controller 3:
 // kd changing as function of motor angle
 // kp set to zero
+// kd max about 2.5-3 is good
 
 #include "Arduino.h"
 #include <MotorUtilities.h>
@@ -85,6 +86,7 @@ void setup() {
   MotorOut = unpack_reply();
   origines = Homing(MotorOut,1.0,MotorIn);
 
+  MotorIn.kp_in = 0;
   Serial.println("Zeroed and Homed at Midpoint of shoulder & hip");
   delay(1000);
 }
@@ -99,29 +101,21 @@ void loop() {
   HipVel = readgyro()-bias_pitch.velocity;
   
   //Read POTs
-    //Torque Amplitudes
   float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
-  float K1 = map_float(POT_reading1, 0, 1023, 0.1, 2); // Shoulder Angle
+  float K1 = map_float(POT_reading1, 0, 1023, 2, 4.5); // Shoulder Angle
   float POT_reading2 = analogRead(POT_C1); // between 0 to 1023
   float C1 = map_float(POT_reading2, 0, 1023, 0.5, 3); // Shoulder Velocity
   float POT_reading3 = analogRead(POT_D1);
   float D1 = map_float(POT_reading3, 0, 1023, 0.5, 3); // Hip Angle
-
-//   MotorIn.kp_in = K1;
-//   MotorIn.kd_in = C1;
-  Serial.print("    K1: "+String(K1));
-
-    //Torque Slopes
   float POT_reading4 = analogRead(POT_K2);
   float K2 = map_float(POT_reading4, 0, 1023, 0.05,0.5); // Shoulder Angle ~0.3
   float POT_reading5 = analogRead(POT_C2);
   float C2 = map_float(POT_reading5, 0, 1023, 0.05,0.15); // Shoulder Velocity ~0.05
   float POT_reading6 = analogRead(POT_D2);
   float D2 = map_float(POT_reading6, 0, 1023, 0.05,0.5); //Hip Angle, ~0.2
-  //Serial.print("    K1: "+String(K1)+" C1: "+String(C1)+ " D1:" + String(D1) + " K2: " + String(K2)+" C2: "+String(C2)+" D2: "+String(D2));
 
-  //maintains position
-  MotorIn.p_in = MotorOut.position;
+  Serial.print("    K1: "+String(K1)); // about 2.5-3 is good
+  //Serial.print("    K1: "+String(K1)+" C1: "+String(C1)+ " D1:" + String(D1) + " K2: " + String(K2)+" C2: "+String(C2)+" D2: "+String(D2));
 
   // Torque Eq
   float As = 2; float Al = 1; float Ss = 1; 
@@ -131,7 +125,7 @@ void loop() {
 
   float LB_kd = 0.2; // lower bound kd
   float Ad = 2*LB_kd;
-  MotorIn.kd_in = K1*(Ad*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg))+(1-Ad));
+  MotorIn.kd_in = K1*(Ad*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg-radians(HipAngle)))+(1-Ad));
 
   MotorIn.t_in = shoulder + leg + switching;
 
@@ -140,9 +134,9 @@ void loop() {
   //pack & unpack msgs
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
-  Serial.print("  T_out: "+String(MotorOut.torque));
-  Serial.print("  T_in: " + String(MotorIn.t_in) +"  shoulder: "+String(shoulder)+"  leg: "+String(leg)+ "  switching: " + String(switching)+ "  kd: " + String(MotorIn.kd_in));
-  Serial.println("    MEASURING:  IMU_Ang: " + String(HipAngle)+  "  P_out: "+String(degrees(MotorOut.position)) + "v_out: "+String(MotorOut.velocity));
+  Serial.print("  kd: " + String(MotorIn.kd_in)+"  T_out: "+String(MotorOut.torque));
+  Serial.print("  T_in: " + String(MotorIn.t_in));
+  Serial.println("    MEASURING:  IMU_Ang: " + String(HipAngle)+  "  P_out: "+String(degrees(MotorOut.position)) + "  v_out: "+String(MotorOut.velocity));
 
   while (millis()-time_now < dt) {}
 }
