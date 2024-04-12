@@ -14,15 +14,27 @@ float readIMU(){
   mpu.getEvent(&a, &g, &temp);
 
   // /* Calculate the pitch and roll angles */
-  // float ax = a.acceleration.x;
-  // float ay = a.acceleration.y;
-  // float az = a.acceleration.z;
+  float ax = a.acceleration.x;
+  float ay = a.acceleration.y;
+  float az = a.acceleration.z;
 
-  float pitch = g.gyro.x;
-  // float roll = g.gyro.y;
-  // float yaw = g.gyro.z;
+  //float pitch = atan2(-ay, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
+  float pitch = atan2(ay, az) * 180.0 / M_PI;
+  pitch = fmod(pitch, 360);
 
   return pitch;
+}
+
+float readgyro() {
+  sensors_event_t a, g, temp;
+  //float pitch;
+  /* Get new sensor events with the readings */
+  mpu.getEvent(&a, &g, &temp);
+
+  float pitch_rate = g.gyro.x * 180/PI; //deg/s
+  // float roll = g.gyro.y;
+  // float yaw = g.gyro.z;
+  return pitch_rate;
 }
 
 float calculateMean(float arr[], int size) {
@@ -47,24 +59,38 @@ const int countersize = 1000;
 float Angles[countersize];
 float Velocities[countersize];
 
-void firstrun() {
-  float dt = 10;
+struct bias {
+  float angle;
+  float velocity;
+};
+
+bias calculate_bias() {
+  bias bias_pitch;
+  float LegAngle = 0;
   float LegVel = 0;
-  //float LegAngle = 0;
+  float dt = 5;
+  Serial.println("Calibrating IMU...");
     for (int i = 0; i < countersize; i++) {
-        float time_now = millis();
-        LegVel = readIMU();
-        //LegVel = readIMU()-Leg_Vel_Initial;
-        //LegAngle = fmod(LegAngle + (LegVel*dt)*0.001*180/PI, 360);
-        //Angles[i] = LegAngle;
+        long time_now = millis();
+        LegAngle = readIMU();
+        LegVel = readgyro();
+        // LegVel = readIMU()-Leg_Vel_Initial;
+        // LegAngle = fmod(LegAngle + (LegVel*dt)*0.001*180/PI, 360);
+        Angles[i] = LegAngle;
         Velocities[i] = LegVel;
-        Serial.print("Leg Velocity = ");
-        Serial.println(LegVel,4);
+        //Serial.println("Leg Angle = ");
+        //Serial.println(LegVel,4);
         while (millis()-time_now < dt) {}
     }
+  //calculate bias
+  bias_pitch.angle = calculateMean(Angles, countersize);
+  bias_pitch.velocity = calculateMean(Velocities, countersize);
+  Serial.println("IMU Bias calculated");
+  delay(200);
+  return bias_pitch;
 }
 
-float initializeIMU(){
+void initializeIMU(){
   // Try to initialize!
   if (!mpu.begin()) {
     Serial.println("Failed to find MPU6050 chip");
@@ -75,13 +101,13 @@ float initializeIMU(){
   Serial.println("MPU6050 Found!");
 
   //set accelerometer range
-  mpu.setAccelerometerRange(MPU6050_RANGE_2_G);
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   
   //set gyroscope range
-  mpu.setGyroRange(MPU6050_RANGE_250_DEG);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   
   //set filter Bandwidth
-  mpu.setFilterBandwidth(MPU6050_BAND_10_HZ);
+  mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
 
   delay(100);
 
@@ -94,11 +120,4 @@ float initializeIMU(){
   while (millis()-time_now < initializetime1) {
     float Leg_Vel_Initial = readIMU();
   }
-  //measure bias
-  firstrun();
-  float meanx0 = calculateMean(Velocities, countersize);
-  Serial.println("Time Zeroed");
-  delay(1000);
-  return meanx0;
 }
-
