@@ -107,7 +107,7 @@ void initializeIMU(){
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   
   //set filter Bandwidth
-  mpu.setFilterBandwidth(MPU6050_BAND_260_HZ);
+  mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
 
   delay(100);
 

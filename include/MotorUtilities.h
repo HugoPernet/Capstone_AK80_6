@@ -14,8 +14,8 @@ struct MotorCommand
 {
     float p_in = 0.0f;
     float v_in = 0.0f;
-    const float kp_in = 2.0f;
-    const float kd_in = 1.0f;
+    float kp_in = 2.0f;
+    float kd_in = 1.0f;
     float t_in = 0.0f;
 };
 
