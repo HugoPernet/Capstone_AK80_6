@@ -101,15 +101,15 @@ void loop() {
   //Read POTs
     //Torque Amplitudes
   float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
-  float K1 = map_float(POT_reading1, 0, 1023, 0.5, 3); // Shoulder Angle
+  float K1 = map_float(POT_reading1, 0, 1023, 0.1, 2); // Shoulder Angle
   float POT_reading2 = analogRead(POT_C1); // between 0 to 1023
   float C1 = map_float(POT_reading2, 0, 1023, 0.5, 3); // Shoulder Velocity
   float POT_reading3 = analogRead(POT_D1);
   float D1 = map_float(POT_reading3, 0, 1023, 0.5, 3); // Hip Angle
 
-  MotorIn.kp_in = K1;
-  MotorIn.kd_in = C1;
-  Serial.print("    K1: "+String(K1)+" C1: "+String(C1));
+//   MotorIn.kp_in = K1;
+//   MotorIn.kd_in = C1;
+  Serial.print("    K1: "+String(K1));
 
     //Torque Slopes
   float POT_reading4 = analogRead(POT_K2);
@@ -131,7 +131,7 @@ void loop() {
 
   float LB_kd = 0.2; // lower bound kd
   float Ad = 2*LB_kd;
-  MotorIn.kd_in = Ad*cos(PI/origines.midpoint *(MotorOut.position-origines.leg))+(1-Ad);
+  MotorIn.kd_in = K1*(Ad*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg))+(1-Ad));
 
   MotorIn.t_in = shoulder + leg + switching;
 
@@ -141,8 +141,8 @@ void loop() {
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
   Serial.print("  T_out: "+String(MotorOut.torque));
-  Serial.print("  T_in: " + String(MotorIn.t_in) +"  shoulder: "+String(shoulder)+"  leg: "+String(leg)+ "  switching: " + String(switching)+ "  kd: " + String(MotorIn.t_in));
-  Serial.println("    MEASURING:  IMU_Ang: " + String(HipAngle)+  "  P_out: "+String(degrees(MotorOut.position) + "v_out: "+String(MotorOut.velocity)));
+  Serial.print("  T_in: " + String(MotorIn.t_in) +"  shoulder: "+String(shoulder)+"  leg: "+String(leg)+ "  switching: " + String(switching)+ "  kd: " + String(MotorIn.kd_in));
+  Serial.println("    MEASURING:  IMU_Ang: " + String(HipAngle)+  "  P_out: "+String(degrees(MotorOut.position)) + "v_out: "+String(MotorOut.velocity));
 
   while (millis()-time_now < dt) {}
 }
