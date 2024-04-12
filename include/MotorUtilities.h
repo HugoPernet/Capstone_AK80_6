@@ -14,8 +14,8 @@ struct MotorCommand
 {
     float p_in = 0.0f;
     float v_in = 0.0f;
-    const float kp_in = 2.0f;
-    const float kd_in = 1.0f;
+    float kp_in = 2.0f;
+    float kd_in = 1.0f;
     float t_in = 0.0f;
 };
 
@@ -119,8 +119,6 @@ void pack_cmd(struct MotorCommand command) {
 
 }
 
-
-
 struct MotorReply unpack_reply() {
 
   byte buf[8];
@@ -142,8 +140,8 @@ struct MotorReply unpack_reply() {
   unsigned int i_int = ((buf[4] & 0xf) << 8) | buf[5];
 
   reply.position = uint_to_float(p_int, P_MIN, P_MAX, 16);
-  reply.velocity = uint_to_float(v_int, V_MIN, V_MAX, 12);
-  reply.torque = uint_to_float(i_int, -T_MAX, T_MAX, 12);
+  reply.velocity = uint_to_float(v_int, V_MIN, V_MAX, 12); //rad/s
+  reply.torque = uint_to_float(i_int, -T_MAX, T_MAX, 12); //rad
 
   return reply;
 }

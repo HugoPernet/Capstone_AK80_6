@@ -16,7 +16,7 @@ CANSAME5x CAN;
 #define T_MAX 18.0f
 
 
-#define MY_PACKET_ID 0x01
+#define MY_PACKET_ID 0x02
 int dlc = -1;
 
 // Set values
