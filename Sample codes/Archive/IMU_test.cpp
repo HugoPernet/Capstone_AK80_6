@@ -1,17 +1,20 @@
 #include <IMUutilities.h>
 
-float bias_pitch = 0;
-float bias_pitch_rate = 0;
+bias bias_pitch;
+
+// float bias_pitch = 0;
+// float bias_pitch_rate = 0;
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(11250);
     while (!Serial) delay(10);
-    bias_pitch, bias_pitch_rate = initializeIMU();
+    initializeIMU();
+    bias_pitch = calculate_bias();
 }
 
 void loop() {
-    float pitch = readIMU()-bias_pitch;
-    float pitch_rate = readgyro()-bias_pitch_rate;
-    Serial.println("pitch_angle = "+String(pitch) + " pitch_velocity = "+String(pitch_rate)+" Angle_Bias = "+String(bias_pitch)+" Velocity_bias = "+String(bias_pitch_rate));
+    float pitch = readIMU()-bias_pitch.angle;
+    float pitch_rate = readgyro()-bias_pitch.velocity;
+    Serial.println("pitch_angle = "+String(pitch) + " pitch_velocity = "+String(pitch_rate)+" Angle_Bias = "+String(bias_pitch.angle)+" Velocity_bias = "+String(bias_pitch.velocity));
     delay(100);
 }
