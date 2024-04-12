@@ -89,11 +89,6 @@ void setup() {
 
 void loop() {
   float time_now = millis();
-  //Zero IMU reading
-  // if (IMU_BTN_STATE == 1) {
-  //   bias_pitch = initializeIMU();
-  //   IMU_BTN_STATE = 0;
-  // }
 
   //Read IMU
   HipAngle = (readIMU()-bias_pitch.angle)-2.0; //deg
@@ -120,21 +115,27 @@ void loop() {
   //maintains position
   MotorIn.p_in = MotorOut.position;
 
-  //Torque
-  float As = 2; float Al = 2; float Ss = 1;
+  // Torque Eq before figuring out motor position moves positive when bending
+  // float As = 2; float Al = 2; float Ss = 1;
+  // float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-20) + As/2 + Ss;
+  // float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+20) - As/2 - Ss;
+  // float switching = -2*Ss*(1/PI)*atan(HipAngle-20);
+  // MotorIn.t_in = shoulder + leg + switching;
+
+  // Torque Eq
+  float As = 2; float Al = 1; float Ss = 1;
   float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-10) + As/2 + Ss;
-  float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+20) - As/2 - Ss;
-  float switching = -2*Ss*(1/PI)*atan(HipAngle-20);
+  float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+10) - As/2 - Ss + 1;
+  float switching = -4*(1/PI)*atan(HipAngle-20)+1;
   MotorIn.t_in = shoulder + leg + switching;
+
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
 
   //pack & unpack msgs
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
   Serial.print("   T_in: " + String(MotorIn.t_in) +"  shoulder: "+String(shoulder)+"  leg: "+String(leg)+ "  switching " + String(switching));
-  Serial.print("    MEASURING:  IMU_Ang: " + String(HipAngle)+ "  IMU_Vel: " + String(HipVel));
-  Serial.println("  P_out: "+String(degrees(MotorOut.position)));//-origines.shoulder))+"  P_leg:"+String(degrees(MotorOut.position-origines.leg)));
-  //Serial.println("  t_out:"+String(MotorOut.torque));
+  Serial.println("    MEASURING:  IMU_Ang: " + String(HipAngle)+  "P_out: "+String(degrees(MotorOut.position)));
 
   while (millis()-time_now < dt) {}
 }
