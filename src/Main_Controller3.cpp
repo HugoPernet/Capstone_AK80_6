@@ -96,7 +96,7 @@ void loop() {
   // }
 
   //Read IMU
-  HipAngle = (readIMU()-bias_pitch.angle)-5.0; //deg
+  HipAngle = (readIMU()-bias_pitch.angle)-2.0; //deg
   HipVel = readgyro()-bias_pitch.velocity;
   
   //Read POTs
@@ -121,7 +121,7 @@ void loop() {
   MotorIn.p_in = MotorOut.position;
 
   //Torque
-  float As = 2; float Al = 2; float Ss = 0.5;
+  float As = 2; float Al = 2; float Ss = 1;
   float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-10) + As/2 + Ss;
   float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+20) - As/2 - Ss;
   float switching = -2*Ss*(1/PI)*atan(HipAngle-20);
@@ -131,10 +131,10 @@ void loop() {
   //pack & unpack msgs
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
-
-  Serial.print(" T_in: " + String(MotorIn.t_in) +  "   MEASURING:  IMU_Ang: " + String(HipAngle)+ "  IMU_Vel: " + String(HipVel));
-  Serial.print("  P_shoulder:"+String(degrees(MotorOut.position-origines.shoulder))+"  P_leg:"+String(degrees(MotorOut.position-origines.leg)));
-  Serial.println("  t_out:"+String(MotorOut.torque)+"  v_out"+ String(MotorOut.velocity*180/PI));
+  Serial.print("   T_in: " + String(MotorIn.t_in) +"  shoulder: "+String(shoulder)+"  leg: "+String(leg)+ "  switching " + String(switching));
+  Serial.print("    MEASURING:  IMU_Ang: " + String(HipAngle)+ "  IMU_Vel: " + String(HipVel));
+  Serial.println("  P_out: "+String(degrees(MotorOut.position)));//-origines.shoulder))+"  P_leg:"+String(degrees(MotorOut.position-origines.leg)));
+  //Serial.println("  t_out:"+String(MotorOut.torque));
 
   while (millis()-time_now < dt) {}
 }
