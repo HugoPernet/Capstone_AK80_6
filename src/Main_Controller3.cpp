@@ -127,14 +127,18 @@ void loop() {
   // float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+20) - As/2 - Ss;
   // float switching = -2*Ss*(1/PI)*atan(HipAngle-20);
   // MotorIn.t_in = shoulder + leg + switching;
-  float Akd =1;
+  float Akd =3;
   float Slack = abs(origines.shoulder-origines.leg);
   // Torque Eq
   float As = 2; float Al = 1; float Ss = 1;
   float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-10) + As/2;
   float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+10) - As/2 - 2*Ss + 1;
   float switching = -4*(1/PI)*atan(HipAngle-20)+1;
-  float KD = Akd*cos((2*PI/Slack)*(MotorOut.position - origines.leg)) + Akd + 0.2;
+  //float KD = Akd*cos((2*PI/Slack)*(MotorOut.position - origines.shoulder-HipAngle)) + Akd + 0.2;
+
+  float KD = Akd*(1/PI)*atan(degrees(MotorOut.position-(Slack/2))-10) + Akd*(1/PI)*atan(degrees(-MotorOut.position -origines.shoulder-HipAngle) +10) +(Akd +0.5);
+
+
   
 
 
