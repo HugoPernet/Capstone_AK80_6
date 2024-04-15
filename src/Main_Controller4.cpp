@@ -103,16 +103,16 @@ void loop() {
   //Read POTs
   float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
   float K1 = map_float(POT_reading1, 0, 1023, 2, 4.5); // Shoulder Angle
-  float POT_reading2 = analogRead(POT_C1); // between 0 to 1023
-  float C1 = map_float(POT_reading2, 0, 1023, 0.5, 3); // Shoulder Velocity
-  float POT_reading3 = analogRead(POT_D1);
-  float D1 = map_float(POT_reading3, 0, 1023, 0.5, 3); // Hip Angle
-  float POT_reading4 = analogRead(POT_K2);
-  float K2 = map_float(POT_reading4, 0, 1023, 0.05,0.5); // Shoulder Angle ~0.3
-  float POT_reading5 = analogRead(POT_C2);
-  float C2 = map_float(POT_reading5, 0, 1023, 0.05,0.15); // Shoulder Velocity ~0.05
-  float POT_reading6 = analogRead(POT_D2);
-  float D2 = map_float(POT_reading6, 0, 1023, 0.05,0.5); //Hip Angle, ~0.2
+//   float POT_reading2 = analogRead(POT_C1); // between 0 to 1023
+//   float C1 = map_float(POT_reading2, 0, 1023, 0.5, 3); // Shoulder Velocity
+//   float POT_reading3 = analogRead(POT_D1);
+//   float D1 = map_float(POT_reading3, 0, 1023, 0.5, 3); // Hip Angle
+//   float POT_reading4 = analogRead(POT_K2);
+//   float K2 = map_float(POT_reading4, 0, 1023, 0.05,0.5); // Shoulder Angle ~0.3
+//   float POT_reading5 = analogRead(POT_C2);
+//   float C2 = map_float(POT_reading5, 0, 1023, 0.05,0.15); // Shoulder Velocity ~0.05
+//   float POT_reading6 = analogRead(POT_D2);
+//   float D2 = map_float(POT_reading6, 0, 1023, 0.05,0.5); //Hip Angle, ~0.2
 
   Serial.print("    K1: "+String(K1)); // about 2.5-3 is good
   //Serial.print("    K1: "+String(K1)+" C1: "+String(C1)+ " D1:" + String(D1) + " K2: " + String(K2)+" C2: "+String(C2)+" D2: "+String(D2));
@@ -123,13 +123,12 @@ void loop() {
   float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+10) - As/2 - 2*Ss + 1;
   float switching = -4*(1/PI)*atan(HipAngle-20)+1;
 
-  float LB_kd = 0.2; // lower bound kd
-  float Ad = 2*LB_kd;
-  MotorIn.kd_in = K1*(Ad*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg-radians(HipAngle)))+(1-Ad));
-
   MotorIn.t_in = shoulder + leg + switching;
-
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
+
+  float LB_kd = 0.2; // lower bound kd
+  float Akd = 2*LB_kd;
+  MotorIn.kd_in = K1*(Akd*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg-radians(HipAngle)))+(1-Akd));
 
   //pack & unpack msgs
   pack_cmd(MotorIn);
