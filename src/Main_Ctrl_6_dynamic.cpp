@@ -2,8 +2,9 @@
 // kd changing as function of motor angle
 // kp set to zero
 // kd max about 2.5-3 is good
-// As = 2; Al = 3; Ss = 1;
-// Added torque limits at ends (saturates to zero)
+// increased shoulder torque
+// implemented shoulder velocity
+// changing dt depending on shoulder vs. leg assist
 
 #include "Arduino.h"
 #include <MotorUtilities.h>
@@ -45,6 +46,7 @@ float dt = 10;
 const float StaticFrictionTorque = 0.25;
 float TorqueAmplitude = 1.0;
 float K2, C2, D2 = 0.1; // torque slope
+String dyn = "OFF";
 
 void setup() {
   //starts Serial Com
@@ -85,7 +87,7 @@ void loop() {
 
   //Read POTs
   float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
-  float K1 = map_float(POT_reading1, 0, 1023, 2, 4.5); // Shoulder Angle
+  float K1 = map_float(POT_reading1, 0, 1023, 1, 4.5); // Shoulder Angle
   Serial.print("    K1: "+String(K1)); // about 2.5-3 is good
 
   //Read IMU
@@ -93,15 +95,21 @@ void loop() {
   HipVel = readgyro()-bias_pitch.velocity;
  
   // Torque Eq
-  float As = 2; float Al = 1; float Ss = 1;
-  float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-10) + As/2;
-  float leg = Al*(1/PI)*atan(-degrees(MotorOut.position-origines.leg)+10) - As/2 - 2*Ss + 1;
-  float switching = -4*(1/PI)*atan(HipAngle-20)+1;
+  float As = 3; float Al = 2; float Ss = 1;
+  float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-3) + As/2 + 0.5;
+  float leg = Al*(1/PI)*atan(-degrees(MotorOut.position-origines.leg)+30) - As/2 - 2*Ss + 0.5;
+  float switching = -4*(1/PI)*atan(HipAngle-20)+2;
 
-  float shoulder_vel = pow((1/PI),2)*(atan(degrees(MotorOut.position-origines.shoulder))+0.5)*(atan(-degrees(MotorOut.velocity)+10)+0.5);
+  float shoulder_vel = ((1/PI)*atan(degrees(MotorOut.position-origines.shoulder))+0.5)*(1/PI*atan(-degrees(MotorOut.velocity)-2)+0.5);
   float leg_vel = 1/PI*(atan(HipAngle-10)+0.5);
 
-  MotorIn.t_in = shoulder + leg + switching;
+    if (shoulder_vel > 0.1) {
+        dyn = "ON";
+    }
+    else {
+        dyn = "OFF";
+    }
+  MotorIn.t_in = shoulder + leg + switching -shoulder_vel;
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
 
   float LB_kd = 0.2; // lower bound kd
@@ -113,8 +121,14 @@ void loop() {
   MotorOut = unpack_reply();
   Serial.print("  kd: " + String(MotorIn.kd_in));
   Serial.print("  T_in: " + String(MotorIn.t_in));
-  Serial.print("   shoulder_vel: "+String(shoulder_vel)+"  leg_vel: "+String(leg_vel));
-  Serial.println("  IMU_Ang: " + String(HipAngle)+  "  P_s: "+String(degrees(MotorOut.position-origines.shoulder))+ "  P_l: "+String(degrees(MotorOut.position-origines.leg)));
+  Serial.print("   shoulder_vel: "+String(shoulder_vel) + "  dyn = " + dyn + "  dt: " + String(dt));
+  Serial.println("  IMU_Ang: " + String(HipAngle)+  "  P_s: "+String(degrees(MotorOut.position-origines.shoulder))+ "  P_l: "+String(degrees(MotorOut.position-origines.leg))+ "  MotVel: "+String(degrees(MotorOut.velocity)));
 
+  if (MotorIn.t_in < 0) {
+    dt = 100;
+  }
+  else {
+    dt = 10;
+  }
   while (millis()-time_now < dt) {}
 }

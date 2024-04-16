@@ -120,13 +120,10 @@ void loop() {
   MotorIn.t_in = shoulder + leg + switching;
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
 
-  // float LB_kd = 0.2; // lower bound kd
-  // float Akd = 2*LB_kd;
-  // MotorIn.kd_in = K1*(Akd*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg-radians(HipAngle)))+(1-Akd));
-
   float LB_kd = 0.2; // lower bound kd
   float Akd = 2*LB_kd;
   MotorIn.kd_in = K1*(Akd*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg-radians(HipAngle)))+(1-Akd));
+
 
 
   //pack & unpack msgs
