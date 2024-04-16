@@ -150,6 +150,7 @@ struct MotorReply unpack_reply() {
 {
     float shoulder;
     float leg;
+    float midpoint;
 
 };
 
@@ -176,12 +177,12 @@ Joint_origines Homing(MotorReply reply,float threshold,MotorCommand command){
     }
     delay(500);
     Serial.println("leg ok");
-    float Half_slack = abs(origine.leg-origine.shoulder)/2;
-    Serial.println(Half_slack);
+    origine.midpoint = abs(origine.leg-origine.shoulder)/2;
+    Serial.println(origine.midpoint);
     reply = unpack_reply();
 
     //move to new motor origine
-    while(abs(reply.position - (origine.leg+Half_slack))>=0.05){
+    while(abs(reply.position - (origine.leg+origine.midpoint))>=0.05){
       reply = unpack_reply();
       command.p_in = constrain(command.p_in + Step, P_MIN, P_MAX);
       pack_cmd(command);
