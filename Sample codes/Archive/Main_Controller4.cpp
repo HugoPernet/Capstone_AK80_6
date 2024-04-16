@@ -100,31 +100,31 @@ void loop() {
 //   float POT_reading6 = analogRead(POT_D2);
 //   float D2 = map_float(POT_reading6, 0, 1023, 0.05,0.5); //Hip Angle, ~0.2
 
-  Serial.print("    K1: "+String(K1)); // about 2.5-3 is good
-  //Serial.print("    K1: "+String(K1)+" C1: "+String(C1)+ " D1:" + String(D1) + " K2: " + String(K2)+" C2: "+String(C2)+" D2: "+String(D2));
 
-  float Akd =3;
-  float Slack = abs(origines.shoulder-origines.leg);
-  // Torque Eq
-  float As = 2; float Al = 1; float Ss = 1;
+   // Torque Eq
+  float As = 2; float Al = 1; float Ss = 1; 
+  float theta_dot_IMU = readgyro(); // deg/s
+
   float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-10) + As/2;
-  float leg = Al*(1/PI)*atan(degrees(MotorOut.position-origines.leg)+10) - As/2 - 2*Ss + 1;
+  float leg = Al*(1/PI)*atan(-degrees(MotorOut.position-origines.leg)-10) - As/2 - 2*Ss + 1;
   float switching = -4*(1/PI)*atan(HipAngle-20)+1;
-  //float KD = Akd*cos((2*PI/Slack)*(MotorOut.position - origines.shoulder-HipAngle)) + Akd + 0.2;
-
-  float KD = Akd*(1/PI)*atan(degrees(MotorOut.position-(Slack/2))-10) + Akd*(1/PI)*atan(degrees(-MotorOut.position -origines.shoulder-HipAngle) +10) +(Akd +0.5);
-
+  float Dyn_shoulder = 0.01*theta_dot_IMU*((1/PI)*atan(degrees(MotorOut.position - origines.shoulder)-10)+0.5) ;
+  float Dyn_leg = 0.01*MotorOut.velocity*((1/PI)*atan(-theta_dot_IMU)+0.5); 
 
   MotorIn.t_in = shoulder + leg + switching;
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
-  MotorIn.kd_in = KD;
+
+  
+  float LB_kd = 0.2; // lower bound kd
+  float Akd = 2*LB_kd;
+ 
+  MotorIn.kd_in = K1*(Akd*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg-radians(HipAngle)))+(1-Akd));
+
 
   //pack & unpack msgs
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
-  Serial.print("  kd: " + String(MotorIn.kd_in)+"  T_out: "+String(MotorOut.torque));
-  Serial.print("  T_in: " + String(MotorIn.t_in));
-  Serial.println("    MEASURING:  IMU_Ang: " + String(HipAngle)+  "  P_out: "+String(degrees(MotorOut.position)) + "  P_l: "+String(degrees(MotorOut.position-origines.leg))+"  P_s: "+String(degrees(MotorOut.position-origines.shoulder))+"  v_out: "+String(MotorOut.velocity));
+  Serial.println(" Dyn_shoulder: " + String(Dyn_shoulder) + " Dyn_leg: " + String(Dyn_leg));
 
   while (millis()-time_now < dt) {}
 }
