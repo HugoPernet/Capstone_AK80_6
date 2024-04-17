@@ -79,14 +79,14 @@ void setup() {
   delay(1000);
 }
 
-
+float POT_reading1, K1, As, Al, Ss, shoulder, leg, switching, shoulder_vel, LB_kd, Akd;
 
 void timer() {
   tstart = micros();
   for (int i = 0; i < timer_countersize; i++) {
     //Read POTs
-    float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
-    float K1 = map_float(POT_reading1, 0, 1023, 1, 4.5); // Shoulder Angle
+    POT_reading1 = analogRead(POT_K1); // between 0 to 1023
+    K1 = map_float(POT_reading1, 0, 1023, 1, 4.5); // Shoulder Angle
     // Serial.print("    K1: "+String(K1)); // about 2.5-3 is good
 
     //Read IMU
@@ -94,13 +94,13 @@ void timer() {
     HipVel = readgyro()-bias_pitch.velocity;
     
     // Torque Eq
-    float As = 2; float Al = 2; float Ss = 1;
-    float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-3) + As/2 + 1;
-    float leg = Al*(1/PI)*atan(-degrees(MotorOut.position-origines.leg)+30) - As/2 - 2*Ss + 0.5;
-    float switching = -5*(1/PI)*atan(HipAngle-20)+1.5;
+    As = 2; Al = 2; Ss = 1;
+    shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-3) + As/2 + 1;
+    leg = Al*(1/PI)*atan(-degrees(MotorOut.position-origines.leg)+30) - As/2 - 2*Ss + 0.5;
+    switching = -5*(1/PI)*atan(HipAngle-20)+1.5;
 
     // shoulder_vel is between 0 and 1
-    float shoulder_vel = ((1/PI)*atan(degrees(MotorOut.position-origines.shoulder))+0.5)*(1/PI*atan(-degrees(MotorOut.velocity)-2)+0.5);
+    shoulder_vel = ((1/PI)*atan(degrees(MotorOut.position-origines.shoulder))+0.5)*(1/PI*atan(-degrees(MotorOut.velocity)-2)+0.5);
     //float leg_vel = 1/PI*(atan(HipAngle-10)+0.5);
 
         if (shoulder_vel > 0.1) {
@@ -113,17 +113,13 @@ void timer() {
     MotorIn.t_in = shoulder + leg + switching - shoulder_vel;
     MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
 
-    float LB_kd = 0.2; // lower bound kd
-    float Akd = 2*LB_kd;
+    LB_kd = 0.2; // lower bound kd
+    Akd = 2*LB_kd;
     MotorIn.kd_in = K1*(Akd*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg-radians(HipAngle)))+(1-Akd));
 
     //pack & unpack msgs
     pack_cmd(MotorIn);
     MotorOut = unpack_reply();
-    Serial.print("  kd: " + String(MotorIn.kd_in));
-    Serial.print("  T_in: " + String(MotorIn.t_in));
-    Serial.print("   shoulder_vel: "+String(shoulder_vel) + "  dyn = " + dyn + "  dt: " + String(dt));
-    Serial.print("  IMU_Ang: " + String(HipAngle)+  "  P_s: "+String(degrees(MotorOut.position-origines.shoulder))+ "  P_l: "+String(degrees(MotorOut.position-origines.leg)));
     Serial.println("  count: " + String(i));
     }
 
