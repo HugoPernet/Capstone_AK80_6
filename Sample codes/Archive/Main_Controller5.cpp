@@ -1,4 +1,4 @@
-//Edits from Controller 5:
+//Edits from Controller 4:
 // kd changing as function of motor angle
 // kp set to zero
 // kd max about 2.5-3 is good

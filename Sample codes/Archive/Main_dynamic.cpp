@@ -1,10 +1,9 @@
-//Edits from Controller 3:
-// kd changing as function of motor angle
-// kp set to zero
-// kd max about 2.5-3 is good
+//Edits from Controller 6:
+// good for demo -- DO NOT CHANGE
 // increased shoulder torque
 // implemented shoulder velocity
 // changing dt depending on shoulder vs. leg assist
+
 
 #include "Arduino.h"
 #include <MotorUtilities.h>
