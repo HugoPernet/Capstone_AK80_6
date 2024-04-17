@@ -95,13 +95,14 @@ void loop() {
   HipVel = readgyro()-bias_pitch.velocity;
  
   // Torque Eq
-  float As = 3; float Al = 2; float Ss = 1;
-  float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-3) + As/2 + 0.5;
+  float As = 2; float Al = 2; float Ss = 1;
+  float shoulder = As*(1/PI)*atan(degrees(MotorOut.position-origines.shoulder)-3) + As/2 + 1;
   float leg = Al*(1/PI)*atan(-degrees(MotorOut.position-origines.leg)+30) - As/2 - 2*Ss + 0.5;
-  float switching = -4*(1/PI)*atan(HipAngle-20)+2;
+  float switching = -5*(1/PI)*atan(HipAngle-20)+1.5;
 
+  // shoulder_vel is between 0 and 1
   float shoulder_vel = ((1/PI)*atan(degrees(MotorOut.position-origines.shoulder))+0.5)*(1/PI*atan(-degrees(MotorOut.velocity)-2)+0.5);
-  float leg_vel = 1/PI*(atan(HipAngle-10)+0.5);
+  //float leg_vel = 1/PI*(atan(HipAngle-10)+0.5);
 
     if (shoulder_vel > 0.1) {
         dyn = "ON";
@@ -109,7 +110,8 @@ void loop() {
     else {
         dyn = "OFF";
     }
-  MotorIn.t_in = shoulder + leg + switching -shoulder_vel;
+    
+  MotorIn.t_in = shoulder + leg + switching - shoulder_vel;
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
 
   float LB_kd = 0.2; // lower bound kd
@@ -122,7 +124,7 @@ void loop() {
   Serial.print("  kd: " + String(MotorIn.kd_in));
   Serial.print("  T_in: " + String(MotorIn.t_in));
   Serial.print("   shoulder_vel: "+String(shoulder_vel) + "  dyn = " + dyn + "  dt: " + String(dt));
-  Serial.println("  IMU_Ang: " + String(HipAngle)+  "  P_s: "+String(degrees(MotorOut.position-origines.shoulder))+ "  P_l: "+String(degrees(MotorOut.position-origines.leg))+ "  MotVel: "+String(degrees(MotorOut.velocity)));
+  Serial.println("  IMU_Ang: " + String(HipAngle)+  "  P_s: "+String(degrees(MotorOut.position-origines.shoulder))+ "  P_l: "+String(degrees(MotorOut.position-origines.leg)));
 
   if (MotorIn.t_in < 0) {
     dt = 100;
