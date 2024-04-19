@@ -55,7 +55,7 @@ float calculateVariance(float arr[], int size) {
     return variance / size;
 }
 
-const int countersize = 1000;
+const int countersize = 500;
 float Angles[countersize];
 float Velocities[countersize];
 

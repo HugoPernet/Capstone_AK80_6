@@ -115,7 +115,7 @@ void pack_cmd(struct MotorCommand command) {
     CAN.write(buf[i]);
   }
   CAN.endPacket();
-  delay(5);
+  // delay(5);
 
 }
 
