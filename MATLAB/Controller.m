@@ -39,7 +39,7 @@ plot(rad2deg(imu),Switch_leg,LineWidth=3)
 title("$SW_{leg}$ (Switching)",Interpreter="latex",FontSize=20)
 xlabel("$\theta_{imu} (degrees)$",Interpreter="latex",FontSize=15)
 ylabel("ON/OFF",Interpreter="latex",FontSize=15)
-xregion(0,200,"FaceColor", 'r');
+xregion(0,200,"FaceColor", 'b');
 xregion(-200,0,"FaceColor", [0.2 0.2 0.2]);
 txt1 = {'Leg OFF'};
 text(-180,0.5,txt1, fontsize=15)
@@ -53,7 +53,7 @@ title("$SW_{shoulder}$ (Switching)",Interpreter="latex",FontSize=20)
 xlabel("$\theta_{imu} (degrees)$",Interpreter="latex",FontSize=15)
 ylabel("ON/OFF",Interpreter="latex",FontSize=15)
 xregion(10,200,"FaceColor", [0.2 0.2 0.2]);
-xregion(-200,10,"FaceColor",'b' );
+xregion(-200,10,"FaceColor",'r' );
 txt1 = {'Shoulder ON'};
 text(-180,0.5,txt1, fontsize=15)
 txt2 = {'Shoulder OFF'};
@@ -66,7 +66,7 @@ plot(rad2deg(imu),Tleg,LineWidth=3)
 title("$\tau_{leg} $",Interpreter="latex",FontSize=20)
 xlabel("$\theta_{imu} (degrees)$",Interpreter="latex",FontSize=15)
 ylabel("$\tau_{mot} (N.m)$",Interpreter="latex",FontSize=15)
-xregion(0,200,"FaceColor", 'r');
+xregion(0,200,"FaceColor", 'b');
 xregion(-200,0,"FaceColor", [0.2 0.2 0.2]);
 txt1 = {'Leg OFF'};
 text(-180,-2,txt1, fontsize=15)
@@ -82,7 +82,7 @@ title("$\tau_{shoulder} $",Interpreter="latex",FontSize=20)
 xlabel("$\theta_{mot} (degrees)$",Interpreter="latex",FontSize=15)
 ylabel("$\tau_{mot} (N.m)$",Interpreter="latex",FontSize=15)
 xregion(-200,100,"FaceColor", [0.2 0.2 0.2]);
-xregion(100,200,"FaceColor",'b' );
+xregion(100,200,"FaceColor",'r' );
 txt1 = {'Shoulder',' OFF'};
 text(-50,3,txt1, fontsize=15)
 txt2 = {'Shoulder',' ON'};
@@ -94,7 +94,7 @@ plot(rad2deg(imu),Tleg_switch,LineWidth=3)
 title("$\tau_{leg}^{SW}$",Interpreter="latex",FontSize=20)
 xlabel("$\theta_{imu} (degrees)$",Interpreter="latex",FontSize=15)
 ylabel("$\tau_{mot} (N.m)$",Interpreter="latex",FontSize=15)
-xregion(0,200,"FaceColor", 'r');
+xregion(0,200,"FaceColor", 'b');
 xregion(-200,0,"FaceColor", [0.2 0.2 0.2]);
 txt1 = {'Leg OFF'};
 text(-180,-2,txt1, fontsize=15)
@@ -108,7 +108,7 @@ title("$\tau_{shoulder}^{SW}$",Interpreter="latex",FontSize=20)
 xlabel("$\theta_{mot} (degrees)$",Interpreter="latex",FontSize=15)
 ylabel("$\tau_{mot} (N.m)$",Interpreter="latex",FontSize=15)
 xregion(-200,100,"FaceColor", [0.2 0.2 0.2]);
-xregion(100,200,"FaceColor",'b' );
+xregion(100,200,"FaceColor",'r' );
 txt1 = {'Shoulder',' OFF'};
 text(-50,3,txt1, fontsize=15)
 txt2 = {'Shoulder',' ON'};
@@ -174,7 +174,7 @@ xlabel("\textbf{$\theta_{m} (degrees)$}", Interpreter="latex",fontsize=25)
 ylabel("$\theta_{imu} (degrees)$", Interpreter="latex",fontsize=25)
 zlabel("$\tau_{m} (N.m)$", Interpreter="latex",fontsize=25)
 
-title("$\tau_{motor} = \tau_{shoulder}^{SW} + \tau_{leg}^{SW}$",Interpreter="latex",FontSize=30)
+title("$\tau_{motor} = \tau_{shoulder}^{SW} + \tau_{leg}^{SW} + SW_{imu}$",Interpreter="latex",FontSize=15)
 colormap(mymap1)
 
 %% plot orgine of the leg and shoulder
@@ -260,7 +260,7 @@ set(fullyBentdown,'BackgroundColor','white','EdgeColor','black',fontsize=15)
 slighltyBentDown = text(220,55,-0.2,'Slighlty bent down');
 set(slighltyBentDown,'BackgroundColor','white','EdgeColor','black',fontsize=15)
 
-legend({'','$\theta_{Shoulder}=0^{\circ}$','$\theta_{imu}=12^{\circ}$','going down','','','','going up'},Interpreter='Latex',FontSize=20, Location='northwest')
+legend({'','Origine shoulder','$\theta_{imu}=12^{\circ}$','going down','','','','going up'},Interpreter='Latex',FontSize=20, Location='northwest')
 hold off
 
 cc = colorbar('Location','manual',FontSize=20);
