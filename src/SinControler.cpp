@@ -45,7 +45,7 @@ float dt = 10;
 const float StaticFrictionTorque = 0.25;
 float As = 2.0;
 float K2, C2, D2 = 0.1; // torque slope
-float R = 4.37;
+float R = 7.8;
 float midpoint;
 
 void setup() {
@@ -98,29 +98,27 @@ void loop() {
  
   // Torque Eq
   
-  float Ts = As*sin((MotorOut.position-midpoint)*R-(PI/2)) +As;
+  float Ts = As*sin((MotorOut.position-origines.shoulder)*R-(PI/2)) +As+0.5;
   float Tleg = As*sin(radians(HipAngle)*2+(PI/2)) -As;
   
-  float Switch_leg = (1/PI)*atan(HipAngle -3)+0.5;
-  float Switch_shoulder = (1-Switch_leg);
-  
-  float Ts_switch = Ts*(1-Switch_leg);
-  float Tleg_switch = Tleg*Switch_leg;
-  
+
+    float Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
+    //float Switch_shoulder = 1-((1/PI)*atan(HipAngle-10)+0.5);
+    float Ts_switch = Ts*((1/PI)*atan(degrees((MotorOut.position-origines.shoulder)*R) -3)+0.5) +0.5;
+    float Tleg_switch = Tleg*Switch_leg;
+    
   MotorIn.t_in = Ts_switch+Tleg_switch;
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
 
   float LB_kd = 0.2; // lower bound kd
   float Akd = 2*LB_kd;
-  MotorIn.kd_in = K1*(Akd*cos((PI/origines.midpoint) *(MotorOut.position-origines.leg-radians(HipAngle)))+(1-Akd));
+  //MotorIn.kd_in = 4*cos((2*PI/(2*origines.midpoint-radians(HipAngle)))*((MotorOut.position-radians(HipAngle))-origines.leg));
 
   //pack & unpack msgs
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
-  Serial.print("  kd: " + String(MotorIn.kd_in));
   Serial.print("  T_in: " + String(MotorIn.t_in));
-  Serial.print("   shoulder_vel: "+String(shoulder_vel)+"  leg_vel: "+String(leg_vel));
-  Serial.println("  IMU_Ang: " + String(HipAngle)+  "  P_s: "+String(degrees(MotorOut.position-origines.shoulder))+ "  P_l: "+String(degrees(MotorOut.position-origines.leg)));
+  Serial.println("  pout: " + String(MotorOut.position)+"  IMU_Ang: " + String(HipAngle)+  "  P_s: "+String(degrees(MotorOut.position-origines.shoulder))+ "  P_l: "+String(degrees(MotorOut.position-origines.leg)));
 
   while (millis()-time_now < dt) {}
 }
