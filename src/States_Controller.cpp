@@ -6,17 +6,20 @@
 #include <IMUutilities.h>
 
 //////// Variable definition ////////
-struct measurement_avg {
-    float HipAngle;
-    float MotorAngle;
-};
 
 //structs
 MotorCommand MotorIn; // initialize Motor command and Motor reply variables
 MotorReply MotorOut;
 Joint_origines origines;
 bias bias_pitch;
-measurement_avg avgs;
+
+//Loop() Period
+float dt = 10;
+
+// initialize homing parameters
+float P0_shoulder = 0;
+float P0_hip = 0;
+float P0_midpt = 0;
 
 // initialize IMU Data
 float HipVel = 0.0;
@@ -25,17 +28,10 @@ float HipAngle = 0.0;
 // average of last few points
 const int sample_pts = 5;
 float HipAngle_avg = 0;
-float HipAngle_arr[sample_pts] = {0.0f};
+float HipAngle_arr[sample_pts] = {0};
 float MotorAngle_avg = 0;
-float MotorAngle_arr[sample_pts] = {0.0f};
+float MotorAngle_arr[sample_pts] = {0};
 
-// initialize homing parameters
-float P0_shoulder = 0;
-float P0_hip = 0;
-float P0_midpt = 0;
-
-//Loop() Period
-float dt = 10;
 
 //Mechanical constant:
 const float StaticFrictionTorque = 0.25;
@@ -67,25 +63,12 @@ void setup() {
   MotorOut = unpack_reply();
   origines = Homing(MotorOut,1.0,MotorIn);
 
-  //MotorIn.kp_in = 0;
+  HipAngle_arr[sample_pts] = {round(readIMU())-bias_pitch.angle-2};
+  MotorAngle_arr[sample_pts] = {origines.leg+origines.midpoint};
+
   Serial.println("Homed shoulder & hip");
   Serial.println("CONTROL START");
   delay(1000);
-}
-
-
-
-measurement_avg update_avg() {
-    measurement_avg avgs;
-    for (int i = 0; i<sample_pts-1; i++) {
-        HipAngle_arr[i] = HipAngle_arr[i+1];
-        MotorAngle_arr[i] = MotorAngle_arr[i+1];
-    }
-    HipAngle_arr[sample_pts-1] = HipAngle;
-    MotorAngle_arr[sample_pts-1] = MotorOut.position;
-    avgs.HipAngle = calculateMean(HipAngle_arr, sample_pts);
-    avgs.MotorAngle = calculateMean(MotorAngle_arr, sample_pts);
-    return avgs;
 }
 
 void loop() {
@@ -94,14 +77,15 @@ void loop() {
   //Read IMU
   HipAngle = (round(readIMU())-bias_pitch.angle)-2.0; //deg
   HipVel = readgyro()-bias_pitch.velocity;
-  avgs = update_avg();
+  MotorAngle_avg = update_avg(MotorAngle_arr, MotorOut.position, sample_pts);
+  HipAngle_avg = update_avg(HipAngle_arr, HipAngle, sample_pts);
 
   switch (control_case) {
     case 1: {// PC shoulder
         Serial.print("PC_shoulder");
-        if (avgs.HipAngle > IMU_threshold) {
+        if (HipAngle_avg > IMU_threshold) {
             control_case = 3;} // PC hip
-        if ((avgs.HipAngle < IMU_threshold) & (abs(avgs.MotorAngle-origines.shoulder)<compliance_angle)) {
+        if ((HipAngle_avg < IMU_threshold) & (abs(MotorAngle_avg-origines.shoulder)<compliance_angle)) {
             control_case = 2;} // shoulder control
         MotorIn.kp_in = 2;
         MotorIn.p_in = origines.shoulder;
@@ -119,9 +103,9 @@ void loop() {
 
     case 3: {//PC hip
         Serial.print("PC_hip");
-        if (avgs.HipAngle < IMU_threshold) {
+        if (HipAngle_avg < IMU_threshold) {
             control_case = 1; } // PC shoulder
-        if ((avgs.HipAngle > IMU_threshold) & (abs(avgs.MotorAngle-origines.leg)<compliance_angle)) {
+        if ((HipAngle_avg > IMU_threshold) & (abs(MotorAngle_avg-origines.leg)<compliance_angle)) {
             control_case = 4; } // hip_control
         MotorIn.kp_in = 2;
         MotorIn.p_in = origines.leg;

@@ -4,6 +4,7 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 #include <math.h> 
+#include <MathUtilities.h>
 
 Adafruit_MPU6050 mpu;
 
@@ -37,23 +38,7 @@ float readgyro() {
   return pitch_rate;
 }
 
-float calculateMean(float arr[], int size) {
-    float sum = 0;
-    for (int i = 0; i < size; ++i) {
-        sum += arr[i];
-    }
-    return sum / size;
-}
 
-// Function to calculate the variance of an array
-float calculateVariance(float arr[], int size) {
-    float mean = calculateMean(arr, size);
-    float variance = 0;
-    for (int i = 0; i < size; ++i) {
-        variance += (arr[i] - mean) * (arr[i] - mean);
-    }
-    return variance / size;
-}
 
 const int countersize = 500;
 float Angles[countersize];
