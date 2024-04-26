@@ -6,6 +6,10 @@
 #include <IMUutilities.h>
 
 //////// Variable definition ////////
+struct measurement_avg {
+    float HipAngle;
+    float MotorAngle;
+};
 
 //structs
 MotorCommand MotorIn; // initialize Motor command and Motor reply variables
@@ -63,16 +67,13 @@ void setup() {
   MotorOut = unpack_reply();
   origines = Homing(MotorOut,1.0,MotorIn);
 
-  MotorIn.kp_in = 0;
+  //MotorIn.kp_in = 0;
   Serial.println("Homed shoulder & hip");
   Serial.println("CONTROL START");
   delay(1000);
 }
 
-struct measurement_avg {
-    float HipAngle;
-    float MotorAngle;
-};
+
 
 measurement_avg update_avg() {
     measurement_avg avgs;
@@ -87,34 +88,6 @@ measurement_avg update_avg() {
     return avgs;
 }
 
-// float shoulder_control(float HipAngle_avg) {
-//     float Ts = As*sin((MotorOut.position-origines.shoulder)*R-(PI/2)) +As+0.5;
-//     if (HipAngle_avg > IMU_threshold) {
-//         control_case = 3;
-//     }
-//     return Ts;
-// }
-
-// void PC_hip(float HipAngle_avg, float MotorAngle_avg) {
-//     if (HipAngle_avg < IMU_threshold) {
-//         control_case = 1; // PC_shoulder
-//     }
-//     if ((HipAngle_avg > IMU_threshold) & (abs(MotorAngle_avg-origines.leg)<compliance_angle)) {
-//         control_case = 4; // hip_control
-//     }
-// }
-
-// float hip_control(float HipAngle_avg) {
-//     float Tleg = Al*sin(radians(HipAngle)*2+(PI/2)) - Al;
-//     if (HipAngle_avg < IMU_threshold) {
-//         control_case = 1; //PC_shoulder
-//     }
-//     return Tleg;
-// }
-
-
-
-
 void loop() {
   float time_now = millis();
 
@@ -124,57 +97,61 @@ void loop() {
   avgs = update_avg();
 
   switch (control_case) {
-    case 1: // PC shoulder
+    case 1: {// PC shoulder
+        Serial.print("PC_shoulder");
         if (avgs.HipAngle > IMU_threshold) {
             control_case = 3;} // PC hip
         if ((avgs.HipAngle < IMU_threshold) & (abs(avgs.MotorAngle-origines.shoulder)<compliance_angle)) {
             control_case = 2;} // shoulder control
         MotorIn.t_in = 0; MotorIn.p_in = origines.shoulder;
-        break;
+        break; }
 
-    case 2: //shoulder control
-        float Ts = As*sin((MotorOut.position-origines.shoulder)*R-(PI/2)) +As+0.5;
+    case 2: {//shoulder control
+        Serial.print("shoulder_control");
+        float Ts = As*sin((MotorOut.position-origines.shoulder)*R)+0.5;
         if (HipAngle_avg > IMU_threshold) {
             control_case = 3;} //PC hip
         MotorIn.p_in = 0; MotorIn.t_in = Ts;
-        break;
+        break; }
 
-    case 3: //PC hip
+    case 3: {//PC hip
+        Serial.print("PC_hip");
         if (avgs.HipAngle < IMU_threshold) {
             control_case = 1; } // PC shoulder
         if ((avgs.HipAngle > IMU_threshold) & (abs(avgs.MotorAngle-origines.leg)<compliance_angle)) {
             control_case = 4; } // hip_control
         MotorIn.t_in = 0; MotorIn.p_in = origines.leg;
-        break;
-    case 4: // hip control
-        float Tleg = Al*sin(radians(HipAngle)*2+(PI/2)) - Al;
+        break; }
+
+    case 4: {// hip control
+        Serial.print("hip_control");
+        float Tleg = -Al*sin(radians(HipAngle));
         if (HipAngle_avg < IMU_threshold) {
             control_case = 1;} //PC hip
         MotorIn.p_in = 0; MotorIn.t_in = Tleg;
-        break;
+        break; }
   }
- 
-  // Torque Eq
-  float Ts = As*sin((MotorOut.position-origines.shoulder)*R-(PI/2)) +As+0.5;
-  float Tleg = Al*sin(radians(HipAngle)*2+(PI/2)) - Al;
-  
-  float Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
-  //float Switch_shoulder = 1-((1/PI)*atan(HipAngle-10)+0.5);
-  float Ts_switch = Ts*((1/PI)*atan(degrees((MotorOut.position-origines.shoulder)*R) -3)+0.5) +0.5;
-  float Tleg_switch = Tleg*Switch_leg;
-    
-  MotorIn.t_in = Ts_switch+Tleg_switch;
+
+  MotorIn.p_in = constrain(MotorIn.p_in, P_MIN, P_MAX);
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
 
   float LB_kd = 0.2; // lower bound kd
   float Akd = 2*LB_kd;
   //MotorIn.kd_in = 4*cos((2*PI/(2*origines.midpoint-radians(HipAngle)))*((MotorOut.position-radians(HipAngle))-origines.leg));
 
+    MotorIn.kd_in = 2;
+//   if (MotorOut.velocity > 0) {
+//     MotorIn.kd_in = 0.1;
+//   }
+//   else {
+//     MotorIn.kd_in = 0.5;
+//   }
+
   //pack & unpack msgs
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
-  Serial.print("  T_in: " + String(MotorIn.t_in));
-  Serial.println("  pout: " + String(MotorOut.position)+"  IMU_Ang: " + String(HipAngle)+  "  P_s: "+String(degrees(MotorOut.position-origines.shoulder))+ "  P_l: "+String(degrees(MotorOut.position-origines.leg)));
+  Serial.print("  T_in: " + String(MotorIn.t_in)+ "  p_in: " + String(MotorIn.p_in));
+  Serial.println("  pout: " + String(MotorOut.position)+"  IMU_Ang: " + String(HipAngle));
 
   while (millis()-time_now < dt) {}
 }
