@@ -47,7 +47,7 @@ float R = 7.8;
 // case switching
 int control_case = 1;
 float IMU_threshold = 12; // degrees
-float compliance_angle = 2;
+float compliance_angle = radians(2);
 
 void setup() {
   //starts Serial Com
@@ -103,7 +103,9 @@ void loop() {
             control_case = 3;} // PC hip
         if ((avgs.HipAngle < IMU_threshold) & (abs(avgs.MotorAngle-origines.shoulder)<compliance_angle)) {
             control_case = 2;} // shoulder control
-        MotorIn.t_in = 0; MotorIn.p_in = origines.shoulder;
+        MotorIn.kp_in = 2;
+        MotorIn.p_in = origines.shoulder;
+        MotorIn.t_in = 0; 
         break; }
 
     case 2: {//shoulder control
@@ -111,7 +113,8 @@ void loop() {
         float Ts = As*sin((MotorOut.position-origines.shoulder)*R)+0.5;
         if (HipAngle_avg > IMU_threshold) {
             control_case = 3;} //PC hip
-        MotorIn.p_in = 0; MotorIn.t_in = Ts;
+        MotorIn.kp_in = 0; 
+        MotorIn.t_in = Ts;
         break; }
 
     case 3: {//PC hip
@@ -120,7 +123,9 @@ void loop() {
             control_case = 1; } // PC shoulder
         if ((avgs.HipAngle > IMU_threshold) & (abs(avgs.MotorAngle-origines.leg)<compliance_angle)) {
             control_case = 4; } // hip_control
-        MotorIn.t_in = 0; MotorIn.p_in = origines.leg;
+        MotorIn.kp_in = 2;
+        MotorIn.p_in = origines.leg;
+        MotorIn.t_in = 0; 
         break; }
 
     case 4: {// hip control
@@ -128,18 +133,15 @@ void loop() {
         float Tleg = -Al*sin(radians(HipAngle));
         if (HipAngle_avg < IMU_threshold) {
             control_case = 1;} //PC hip
-        MotorIn.p_in = 0; MotorIn.t_in = Tleg;
+        MotorIn.kp_in = 0; 
+        MotorIn.t_in = Tleg;
         break; }
   }
 
   MotorIn.p_in = constrain(MotorIn.p_in, P_MIN, P_MAX);
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
 
-  float LB_kd = 0.2; // lower bound kd
-  float Akd = 2*LB_kd;
-  //MotorIn.kd_in = 4*cos((2*PI/(2*origines.midpoint-radians(HipAngle)))*((MotorOut.position-radians(HipAngle))-origines.leg));
-
-    MotorIn.kd_in = 2;
+    MotorIn.kd_in = 0.5;
 //   if (MotorOut.velocity > 0) {
 //     MotorIn.kd_in = 0.1;
 //   }
