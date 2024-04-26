@@ -38,12 +38,14 @@ const float StaticFrictionTorque = 0.25;
 float As = 2.0;
 float Al = 2.0;
 float K2, C2, D2 = 0.1; // torque slope
-float R = 7.8;
+float R = 5;
 
 // case switching
 int control_case = 1;
-float IMU_threshold = 12; // degrees
-float compliance_angle = radians(2);
+float IMU_threshold1 = 10.0f; // degrees
+float IMU_threshold2 = 15.0f; // degrees
+float compliance_angle_s = radians(10);
+float compliance_angle_l = radians(40);
 
 void setup() {
   //starts Serial Com
@@ -63,8 +65,8 @@ void setup() {
   MotorOut = unpack_reply();
   origines = Homing(MotorOut,1.0,MotorIn);
 
-  HipAngle_arr[sample_pts] = {round(readIMU())-bias_pitch.angle-2};
-  MotorAngle_arr[sample_pts] = {origines.leg+origines.midpoint};
+//   HipAngle_arr[sample_pts] = {round(readIMU())-bias_pitch.angle-2};
+//   MotorAngle_arr[sample_pts] = {origines.leg+origines.midpoint};
 
   Serial.println("Homed shoulder & hip");
   Serial.println("CONTROL START");
@@ -73,6 +75,7 @@ void setup() {
 
 void loop() {
   float time_now = millis();
+  MotorOut = unpack_reply();
 
   //Read IMU
   HipAngle = (round(readIMU())-bias_pitch.angle)-2.0; //deg
@@ -83,19 +86,24 @@ void loop() {
   switch (control_case) {
     case 1: {// PC shoulder
         Serial.print("PC_shoulder");
-        if (HipAngle_avg > IMU_threshold) {
+        if (HipAngle_avg > IMU_threshold2) {
             control_case = 3;} // PC hip
-        if ((HipAngle_avg < IMU_threshold) & (abs(MotorAngle_avg-origines.shoulder)<compliance_angle)) {
+        if ((abs(HipAngle) <= IMU_threshold2) && (MotorOut.position>=(origines.leg+origines.midpoint)) && (abs(MotorOut.torque) >= 0.1)) {
             control_case = 2;} // shoulder control
+        //Serial.print("  delta1 = " + String(degrees(abs(MotorOut.position-origines.shoulder))));
+        bool a = HipAngle_avg < IMU_threshold2;
+        bool b = MotorOut.position>=(origines.leg+origines.midpoint);
+        bool c = abs(MotorOut.torque) >= 0.1;
+        Serial.print( "  a,b,c= " + String(a)+" "+String(b)+" "+String(c) + " imu = " + String(HipAngle));
         MotorIn.kp_in = 2;
         MotorIn.p_in = origines.shoulder;
-        MotorIn.t_in = 0; 
+        MotorIn.t_in = 0.5; 
         break; }
 
     case 2: {//shoulder control
         Serial.print("shoulder_control");
         float Ts = As*sin((MotorOut.position-origines.shoulder)*R)+0.5;
-        if (HipAngle_avg > IMU_threshold) {
+        if (HipAngle_avg > IMU_threshold2) {
             control_case = 3;} //PC hip
         MotorIn.kp_in = 0; 
         MotorIn.t_in = Ts;
@@ -103,10 +111,11 @@ void loop() {
 
     case 3: {//PC hip
         Serial.print("PC_hip");
-        if (HipAngle_avg < IMU_threshold) {
+        if (HipAngle_avg < IMU_threshold1) {
             control_case = 1; } // PC shoulder
-        if ((HipAngle_avg > IMU_threshold) & (abs(MotorAngle_avg-origines.leg)<compliance_angle)) {
+        if ((HipAngle_avg > IMU_threshold1) && (MotorOut.position<=(origines.leg+origines.midpoint)) && (abs(MotorOut.torque) >= 0.5)) {
             control_case = 4; } // hip_control
+        //Serial.print("  delta2 = " + String(degrees(abs(MotorOut.position-origines.leg))));
         MotorIn.kp_in = 2;
         MotorIn.p_in = origines.leg;
         MotorIn.t_in = 0; 
@@ -115,7 +124,7 @@ void loop() {
     case 4: {// hip control
         Serial.print("hip_control");
         float Tleg = -Al*sin(radians(HipAngle));
-        if (HipAngle_avg < IMU_threshold) {
+        if (HipAngle_avg < IMU_threshold1) {
             control_case = 1;} //PC hip
         MotorIn.kp_in = 0; 
         MotorIn.t_in = Tleg;
@@ -136,7 +145,7 @@ void loop() {
   //pack & unpack msgs
   pack_cmd(MotorIn);
   MotorOut = unpack_reply();
-  Serial.print("  T_in: " + String(MotorIn.t_in)+ "  p_in: " + String(MotorIn.p_in));
+  Serial.print("  T_in: " + String(MotorIn.t_in)+ "  T_out: " + String(MotorOut.torque) + "  p_in: " + String(MotorIn.p_in));
   Serial.println("  pout: " + String(MotorOut.position)+"  IMU_Ang: " + String(HipAngle));
 
   while (millis()-time_now < dt) {}
