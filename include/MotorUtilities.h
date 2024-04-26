@@ -112,7 +112,7 @@ void pack_cmd(struct MotorCommand command) {
   CAN.beginPacket(MY_PACKET_ID,dlc,false);
   
   for (int i =0; i<=7;i++){
-    CAN.write(buf[i]);œ
+    CAN.write(buf[i]);
   }
   CAN.endPacket();
   // delay(5);

@@ -43,9 +43,9 @@ float dt = 10;
 
 //Mechanical constant:
 const float StaticFrictionTorque = 0.25;
-float As = 2.0;
+float As = 4.0;
 float K2, C2, D2 = 0.1; // torque slope
-float R = 7.8;
+float R = 5;
 float midpoint;
 
 void setup() {
@@ -79,6 +79,7 @@ void setup() {
   Serial.println("CONTROL START");
   delay(1000);
   midpoint = abs(origines.leg - origines.shoulder)/2;
+  MotorIn.kd_in = 1;
 }
 
 
@@ -86,6 +87,13 @@ void setup() {
 
 void loop() {
   float time_now = millis();
+
+  if (MotorOut.velocity>0){
+    MotorIn.kd_in = 0.1 ;
+  }
+  else{
+    MotorIn.kd_in = 0.5;
+  }
 
   //Read POTs
   float POT_reading1 = analogRead(POT_K1); // between 0 to 1023
@@ -97,21 +105,29 @@ void loop() {
   HipVel = readgyro()-bias_pitch.velocity;
  
   // Torque Eq
+
+  float Ts = As*sin((MotorOut.position-origines.shoulder)*R);
+  float Tleg = -As*sin(radians(HipAngle));
+
+  float Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
+  float Switch_shoulder = ((1/PI)*atan(degrees((MotorOut.position-origines.shoulder)*R) -3)+0.5);
+  float Ts_switch = Ts*Switch_shoulder + 0.5;
+  float Tleg_switch = Tleg*Switch_leg;
   
-  float Ts = As*sin((MotorOut.position-origines.shoulder)*R-(PI/2)) +As+0.5;
-  float Tleg = As*sin(radians(HipAngle)*2+(PI/2)) -As;
+  //float Ts = As*sin((MotorOut.position-origines.shoulder)*R-(PI/2)) +As+0.5;
+  //float Tleg = As*sin(radians(HipAngle)*2+(PI/2)) -As;
   
 
-    float Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
+   // float Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
     //float Switch_shoulder = 1-((1/PI)*atan(HipAngle-10)+0.5);
-    float Ts_switch = Ts*((1/PI)*atan(degrees((MotorOut.position-origines.shoulder)*R) -3)+0.5) +0.5;
-    float Tleg_switch = Tleg*Switch_leg;
+   // float Ts_switch = Ts*((1/PI)*atan(degrees((MotorOut.position-origines.shoulder)*R) -3)+0.5) +0.5;
+    //float Tleg_switch = Tleg*Switch_leg;
     
   MotorIn.t_in = Ts_switch+Tleg_switch;
   MotorIn.t_in = constrain(MotorIn.t_in, T_MIN, T_MAX);
 
-  float LB_kd = 0.2; // lower bound kd
-  float Akd = 2*LB_kd;
+  //float LB_kd = 0.2; // lower bound kd
+  //float Akd = 2*LB_kd;
   //MotorIn.kd_in = 4*cos((2*PI/(2*origines.midpoint-radians(HipAngle)))*((MotorOut.position-radians(HipAngle))-origines.leg));
 
   //pack & unpack msgs

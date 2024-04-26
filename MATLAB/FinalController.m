@@ -209,14 +209,19 @@ InterpStyle = 'spline'; %you can choose cubic, nearest, makima, linear, or splin
 z1 = interp2(rad2deg(X),rad2deg(Y),Z,rad2deg(x1),rad2deg(y1),'cubic',0); %Cast points(X,Y) on the surface by interpolating Z
 hold on
 plot3(rad2deg(x1),rad2deg(y1),z1,'-k','LineWidth',4,'Color',[1 1 0]) %show the new data
-
+plot3(14,0,2.4,'o',MarkerFaceColor=[1 0 1],MarkerEdgeColor=[0 0 0], MarkerSize= 10)
+ArmDown = text(14,0,2.6,'1',color='magenta');
+set(ArmDown,'BackgroundColor','none','EdgeColor','none',fontsize=30)
 %path 2
 y1 = 0:0.01:deg2rad(12); %some x path
 x1 = linspace(zero_shoulder,zero_shoulder,length(y1)); %some y path
 InterpStyle = 'spline'; %you can choose cubic, nearest, makima, linear, or spline
 z1 = interp2(rad2deg(X),rad2deg(Y),Z,rad2deg(x1),rad2deg(y1),'cubic',0); %your interpolated z values
 hold on
-plot3(rad2deg(x1),rad2deg(y1),z1+0.04,'-k','LineWidth',4,'Color',[1 1 0]) %show the new data
+plot3(rad2deg(x1),rad2deg(y1),z1+0.04,'-k','LineWidth',4,'Color',[1 1 0])
+plot3(4,0,0.59,'o',MarkerFaceColor=[1 0 1],MarkerEdgeColor=[0 0 0], MarkerSize= 10)
+ArmDown = text(14,-5,0.7,'2',color='magenta');
+set(ArmDown,'BackgroundColor','none','EdgeColor','none',fontsize=30)
 
 %path 3
 x1 = zero_leg+0.1:0.01:zero_shoulder; %some x path
@@ -225,6 +230,9 @@ InterpStyle = 'spline'; %you can choose cubic, nearest, makima, linear, or splin
 z1 = interp2(rad2deg(X),rad2deg(Y),Z,rad2deg(x1),rad2deg(y1),'makima',0); %your interpolated z values
 hold on
 plot3(rad2deg(x1),rad2deg(y1),z1,'--','LineWidth',4,'Color',[1 1 0]) %show the new data
+plot3(3.43,12,0.1,'o',MarkerFaceColor=[1 0 1],MarkerEdgeColor=[0 0 0], MarkerSize= 10)
+ArmDown = text(3.43,30,0.1,'3',color='magenta');
+set(ArmDown,'BackgroundColor','none','EdgeColor','none',fontsize=30)
 
 %path 4
 x1 = linspace(zero_leg+0.1,zero_leg+0.1+deg2rad(87),1000); %some x path
@@ -233,6 +241,11 @@ InterpStyle = 'spline'; %you can choose cubic, nearest, makima, linear, or splin
 z1 = interp2(rad2deg(X),rad2deg(Y),Z,rad2deg(x1),rad2deg(y1),'makima',0); %your interpolated z values
 hold on
 plot3(rad2deg(x1),rad2deg(y1),z1,'-k','LineWidth',4,'Color',[1 1 0]) %show the new data
+plot3(-220,19.48,-0.11,'o',MarkerFaceColor=[1 0 1],MarkerEdgeColor=[0 0 0], MarkerSize= 10)
+ArmDown = text(-200,30.48,-0.11,'4',color='magenta');
+set(ArmDown,'BackgroundColor','none','EdgeColor','none',fontsize=30)
+
+
 %path 5
 x1 = linspace(zero_leg-0.2,zero_leg+0.1+deg2rad(87),1000); %some x path
 y1 = linspace(deg2rad(12),deg2rad(100),length(x1)); %some y path
@@ -240,6 +253,9 @@ InterpStyle = 'spline'; %you can choose cubic, nearest, makima, linear, or splin
 z1 = interp2(rad2deg(X),rad2deg(Y),Z,rad2deg(x1),rad2deg(y1),'makima',0); %your interpolated z values
 hold on
 plot3(rad2deg(x1),rad2deg(y1),z1,'-k','LineWidth',5,'Color',[0 1 0]) %show the new data
+plot3(-151,84,-1.47,'o',MarkerFaceColor=[1 0 1],MarkerEdgeColor=[0 0 0], MarkerSize= 10)
+ArmDown = text(-101,84,-1.57,'5',color='magenta');
+set(ArmDown,'BackgroundColor','none','EdgeColor','none',fontsize=30)
 
 %path 6
 x1 = linspace(zero_leg-0.2,zero_shoulder,1000); %some x path
@@ -248,22 +264,19 @@ InterpStyle = 'spline'; %you can choose cubic, nearest, makima, linear, or splin
 z1 = interp2(rad2deg(X),rad2deg(Y),Z,rad2deg(x1),rad2deg(y1),'makima',0); %your interpolated z values
 hold on
 plot3(rad2deg(x1),rad2deg(y1),z1,'--','LineWidth',5,'Color',[0 1 0]) %show the new data
+plot3(-240,12.17,0.1,'o',MarkerFaceColor=[1 0 1],MarkerEdgeColor=[0 0 0], MarkerSize= 10)
+ArmDown = text(-250,8,0.2,'6',color='magenta');
+set(ArmDown,'BackgroundColor','none','EdgeColor','none',fontsize=30)
+
+
 
 
 
 
 %% create 3D labels
-ArmDown = text(-120,-18,0.7,'Arm down');
-set(ArmDown,'BackgroundColor','white','EdgeColor','black',fontsize=15)
 
-ArmUp = text(14,-18,2.5,'Arm up');
-set(ArmUp,'BackgroundColor','white','EdgeColor','black',fontsize=15)
 
-fullyBentdown = text(13,100,-1,'Fully bent down');
-set(fullyBentdown,'BackgroundColor','white','EdgeColor','black',fontsize=15)
 
-slighltyBentDown = text(22,60,-0.3,'Slighlty bent down');
-set(slighltyBentDown,'BackgroundColor','white','EdgeColor','black',fontsize=15)
 
 legend({'','$\theta_{Shoulder}=0^{\circ}$','$\theta_{imu}=12^{\circ}$','going down','','','','going up'},Interpreter='Latex',FontSize=20, Location='northwest')
 hold off
