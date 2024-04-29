@@ -21,5 +21,5 @@
 /// CAN parameters for motors ///
 
 //CAN Parameters
-#define MY_PACKET_ID 0x01
+#define MY_PACKET_ID 0x02
 int dlc = -1;

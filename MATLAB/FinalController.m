@@ -24,8 +24,8 @@ rangeshoulder = linspace(-pi,pi/6.6,1000);
 
 
 %orgine leg and shoulder
-zero_leg = -4.0;
-zero_shoulder = 0.07;
+zero_leg = 4.0;
+zero_shoulder = -0.07;
 midpoint = abs(zero_leg-zero_shoulder)/2;
 
 %torque
@@ -154,21 +154,20 @@ mymap2 = [0 1 0
 
 
 
-%create surface
-[X,Y] = meshgrid(zero_leg-0.4:0.08:(zero_shoulder+pi)/R+0.1,-0.5:0.06:2.2); %some x and y data
+[X,Y] = meshgrid(-pi:0.08:pi,-0.5:0.06:2.2); %some x and y data
 %torque
 Ts = As*sin((X-zero_shoulder)*R);
-Tleg = -As*sin(Y);
+Tleg = As*sin(Y);
 
 Switch_leg = (1/pi)*atan(rad2deg(Y) -3)+0.5; 
 Switch_shoulder = 1-((1/pi)*atan(rad2deg(Y)-10)+0.5);
 
-Ts_switch = Ts.*Switch_shoulder.*((1/pi)*atan(rad2deg((X-zero_shoulder)*R) -3)+0.5) +0.5;
+Ts_switch = Ts.*Switch_shoulder.*(1-((1/pi)*atan(rad2deg((X-zero_shoulder)*R) -3)+0.5));
 Tleg_switch = Tleg.*Switch_leg;
 
 switching = -0.5*(1/pi)*atan(rad2deg(Y)-20)-0.1;
 
-Z = Ts_switch+Tleg_switch;
+Z = Ts_switch+Tleg_switch-0.5;
 
 
 
