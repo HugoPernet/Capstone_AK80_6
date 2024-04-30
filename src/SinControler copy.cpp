@@ -18,7 +18,8 @@
 
 //structs
 CAN_Tx Motor_Tx; // initialize Motor command and Motor reply variables
-CAN_Rx Motor_Rx;
+CAN_Rx Motor_Rx_L;
+CAN_Rx Motor_Rx_R;
 Joint_origines origine;
 bias bias_pitch;
 
@@ -43,10 +44,11 @@ void setup() {
   SetZero();
   delay(50);
 
-  Motor_Rx = unpack_reply();
-  HomingR(Motor_Rx,1.0,Motor_Tx,origine);
-  Motor_Rx = unpack_reply();
-  HomingL(Motor_Rx,1.0,Motor_Tx,origine);
+  Motor_Rx_L = unpack_reply_L();
+  HomingL(Motor_Rx_L,1.0,Motor_Tx,origine);
+  Motor_Rx_R = unpack_reply_R();
+  HomingR(Motor_Rx_R,1.0,Motor_Tx,origine);
+
 
 }
 
@@ -54,7 +56,6 @@ void setup() {
 
 
 void loop() {
-  unpack_reply();
   delay(1000);
 
 }
