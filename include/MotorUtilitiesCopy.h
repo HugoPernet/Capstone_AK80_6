@@ -8,6 +8,7 @@ struct CAN_Rx
     float positionL = 0.0f;
     float velocityL = 0.0f;
     float torqueL= 0.0f;
+
     float positionR = 0.0f;
     float velocityR = 0.0f;
     float torqueR= 0.0f;
@@ -81,7 +82,7 @@ void EnterMotorMode() {
   
   if (CAN.availableForWrite()==0)
   {
-    CAN.beginPacket(CAN_ID_L,dlc,false);
+  CAN.beginPacket(CAN_ID_L,dlc,false);
   for (int i =0; i<=7;i++){
     CAN.write(buf[i]);
   }
@@ -92,7 +93,7 @@ void EnterMotorMode() {
     CAN.write(buf[i]);
   }
   CAN.endPacket();
-  Serial.println("Moytor mode");
+  Serial.println("Motor mode");
   }
 }
 
@@ -184,9 +185,9 @@ CAN_Rx unpack_reply() {
   byte bufR[8];
   struct CAN_Rx reply;
 
-  CAN.filter(2);
-  Serial.println("read 1");
+ 
   unsigned int packetSize = CAN.parsePacket();
+  Serial.println(packetSize);
   /// Listen to  CAN ///
   if (packetSize){
       while (CAN.available()) {
@@ -205,15 +206,17 @@ CAN_Rx unpack_reply() {
     Serial.println("id: "+String(bufL[0]) + " pos: "+String(reply.positionL) );
   }
 
-  CAN.filter(1);
-  Serial.println("read 2");
+
+  CAN.filter(0x02);
   packetSize = CAN.parsePacket();
+  Serial.print(packetSize);
   /// Listen to  CAN ///
   if (packetSize){
       while (CAN.available()) {
         CAN.readBytes(bufR,8);
         Serial.println("reads 2");
         Serial.print(packetSize);
+      }
 
       unsigned int p_int = (bufR[1] << 8) | bufR[2];
       unsigned int v_int = (bufR[3] << 4) | (bufR[4] >> 4);
@@ -222,7 +225,7 @@ CAN_Rx unpack_reply() {
       reply.positionR = uint_to_float(p_int, P_MIN, P_MAX, 16);
       reply.velocityR= uint_to_float(v_int, V_MIN, V_MAX, 12); //rad/s
       reply.torqueR = uint_to_float(i_int, -T_MAX, T_MAX, 12); //rad
-    }
+    
     Serial.println("id: "+String(bufR[0]) + " pos: "+String(reply.positionR) );
   }
   return reply;
@@ -230,16 +233,18 @@ CAN_Rx unpack_reply() {
   
 struct Joint_origines
 {
-    float shoulder;
-    float leg;
-    float midpoint;
+    float shoulder_L;
+    float leg_L;
+    float midpoint_L;
+
+    float shoulder_R;
+    float leg_R;
+    float midpoint_R;
 
 };
 
 
-Joint_origines HomingL(CAN_Rx reply,float threshold,CAN_Tx command){
-    
-    Joint_origines origine;
+void HomingL(CAN_Rx reply,float threshold,CAN_Tx command,Joint_origines origine){
     
     //goes to shoulder
     while(abs(reply.torqueL)<=threshold){
@@ -247,7 +252,7 @@ Joint_origines HomingL(CAN_Rx reply,float threshold,CAN_Tx command){
       pack_cmd(command);
       reply = unpack_reply();
       Serial.println(reply.positionL);
-      origine.shoulder = reply.positionL;
+      origine.shoulder_L = reply.positionL;
     }
     delay(500);
     Serial.println("shoulder ok");
@@ -256,35 +261,32 @@ Joint_origines HomingL(CAN_Rx reply,float threshold,CAN_Tx command){
       command.p_in_L = constrain(command.p_in_L - Step, P_MIN, P_MAX);
       pack_cmd(command);
       reply = unpack_reply();
-      origine.leg = reply.positionL;
+      origine.leg_L = reply.positionL;
     }
     delay(500);
     Serial.println("leg ok");
-    origine.midpoint = abs(origine.leg-origine.shoulder)/2;
-    Serial.println(origine.midpoint);
+    origine.midpoint_L = abs(origine.leg_L-origine.shoulder_L)/2;
+    Serial.println(origine.midpoint_L);
     reply = unpack_reply();
 
     //move to new motor origine
-    while(abs(reply.positionR - (origine.leg+origine.midpoint))>=0.05){
+    while(abs(reply.positionL - (origine.leg_L+origine.midpoint_L))>=0.05){
       reply = unpack_reply();
       command.p_in_L = constrain(command.p_in_L + Step, P_MIN, P_MAX);
       pack_cmd(command);
       delay(10);
     }
     delay(1000);
-    return origine;
 }
 
-Joint_origines HomingR(CAN_Rx reply,float threshold,CAN_Tx command){
-    
-    Joint_origines origine;
-    
+Joint_origines HomingR(CAN_Rx reply,float threshold,CAN_Tx command,Joint_origines origine){
     //goes to shoulder
     while(abs(reply.torqueR)<=threshold){
       command.p_in_R = constrain(command.p_in_R + Step, P_MIN, P_MAX);
       pack_cmd(command);
       reply = unpack_reply();
-      origine.leg = reply.positionR;
+      Serial.println(reply.torqueR);
+      origine.leg_R = reply.positionR;
     }
     delay(500);
     Serial.println("shoulder ok");
@@ -293,23 +295,22 @@ Joint_origines HomingR(CAN_Rx reply,float threshold,CAN_Tx command){
       command.p_in_R = constrain(command.p_in_R - Step, P_MIN, P_MAX);
       pack_cmd(command);
       reply = unpack_reply();
-      origine.shoulder = reply.positionR;
+      origine.shoulder_R = reply.positionR;
     }
     delay(500);
     Serial.println("leg ok");
-    origine.midpoint = abs(origine.leg-origine.shoulder)/2;
-    Serial.println(origine.midpoint);
+    origine.midpoint_R = abs(origine.leg_R-origine.shoulder_R)/2;
+    Serial.println(origine.midpoint_R);
     reply = unpack_reply();
 
     //move to new motor origine
-    while(abs(reply.positionR - (origine.leg-origine.midpoint))>=0.05){
+    while(abs(reply.positionR - (origine.leg_R-origine.midpoint_R))>=0.05){
       reply = unpack_reply();
       command.p_in_R = constrain(command.p_in_R + Step, P_MIN, P_MAX);
       pack_cmd(command);
       delay(10);
     }
     delay(1000);
-    return origine;
 }
 
 

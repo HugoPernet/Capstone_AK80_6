@@ -19,28 +19,10 @@
 //structs
 CAN_Tx Motor_Tx; // initialize Motor command and Motor reply variables
 CAN_Rx Motor_Rx;
-
-
+Joint_origines origine;
 bias bias_pitch;
 
-// initialize IMU Data
-float HipVel = 0.0;
-float HipAngle = 0.0;
 
-// initialize homing parameters
-float P0_shoulder = 0;
-float P0_hip = 0;
-float P0_midpt = 0;
-
-//Loop() Period
-float dt = 10;
-
-//Mechanical constant:
-const float StaticFrictionTorque = 0.25;
-float As = 2.0;
-float K2, C2, D2 = 0.1; // torque slope
-float R = 5;
-float midpoint;
 
 void setup() {
   //starts Serial Com
@@ -62,14 +44,17 @@ void setup() {
   delay(50);
 
   Motor_Rx = unpack_reply();
-  Serial.println(Motor_Rx.positionL);
-  HomingL(Motor_Rx,1.0,Motor_Tx);
-  //HomingR(Motor_Rx,1.0,Motor_Tx);
+  HomingR(Motor_Rx,1.0,Motor_Tx,origine);
+  Motor_Rx = unpack_reply();
+  HomingL(Motor_Rx,1.0,Motor_Tx,origine);
+
 }
 
 
 
 
 void loop() {
-  delay(2000);
+  unpack_reply();
+  delay(1000);
+
 }
