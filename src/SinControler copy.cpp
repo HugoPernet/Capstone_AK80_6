@@ -33,7 +33,7 @@ float P0_hip = 0;
 float P0_midpt = 0;
 
 //Loop() Period
-float dt = 10;
+float dt = 20;
 
 //Mechanical constant:
 const float StaticFrictionTorque = 0.25;
@@ -84,13 +84,13 @@ void setup() {
 
 
 void loop() {
-  
+
   float time_now = millis();
   HipVel = readgyro()-bias_pitch.velocity;
 
   if (HipVel<0){
-    Motor_Tx.kd_in_L = 0.1;
-    Motor_Tx.kd_in_R = 0.1;
+    Motor_Tx.kd_in_L = 0.3;
+    Motor_Tx.kd_in_R = 0.3;
   }
   else{
     Motor_Tx.kd_in_L = 0.5;
@@ -111,6 +111,19 @@ void loop() {
     
   Motor_Tx.t_in_L = Ts_switch+Tleg_switch;
   Motor_Tx.t_in_L = constrain(Motor_Tx.t_in_L, T_MIN, T_MAX);
+
+  ////// Left /////
+  Ts = As*sin((Motor_Rx_R.position-origine.shoulder_R)*R);
+  Tleg = As*sin(radians(HipAngle));
+
+  Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
+  Switch_shoulder = 1-((1/PI)*atan(HipAngle-10)+0.5);
+
+  Ts_switch = Ts*Switch_shoulder*(1-((1/PI)*atan(degrees((Motor_Rx_R.position-origine.shoulder_R)*R) -3) +0.5));
+  Tleg_switch = Tleg*Switch_leg;
+
+  Motor_Tx.t_in_R = Ts_switch+Tleg_switch-0.5;
+  Motor_Tx.t_in_R = constrain(Motor_Tx.t_in_R, T_MIN, T_MAX);
 
   pack_cmd(Motor_Tx);
   while (millis()-time_now < dt) {}
