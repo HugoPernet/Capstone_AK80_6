@@ -17,8 +17,8 @@
 //////// Variable definition ////////
 
 //structs
-CAN_Command MotorIn; // initialize Motor command and Motor reply variables
-CAN_Reply MotorOut;
+CAN_Tx Motor_Tx; // initialize Motor command and Motor reply variables
+CAN_Rx Motor_Rx;
 
 
 bias bias_pitch;
@@ -60,14 +60,15 @@ void setup() {
 
   SetZero();
   delay(50);
-  Serial.println("zero done");
 
-  CAN.onReceive(unpack_reply);
+  Motor_Rx = unpack_reply();
+  HomingL(Motor_Rx,1.0,Motor_Tx);
+  HomingR(Motor_Rx,1.0,Motor_Tx);
 }
 
 
 
 
 void loop() {
-
+  delay(2000);
 }

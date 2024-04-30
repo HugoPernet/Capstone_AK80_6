@@ -3,14 +3,7 @@
 
 CANSAME5x CAN;
 
-struct MotorReply
-{
-    float position = 0.0f;
-    float velocity = 0.0f;
-    float torque= 0.0f;
-};
-
-struct CAN_Reply
+struct CAN_Rx
 {
     float positionL = 0.0f;
     float velocityL = 0.0f;
@@ -20,20 +13,21 @@ struct CAN_Reply
     float torqueR= 0.0f;
 };
 
-struct MotorCommand
+struct CAN_Tx
 {
-    float p_in = 0.0f;
-    float v_in = 0.0f;
-    float kp_in = 2.0f;
-    float kd_in = 1.0f;
-    float t_in = 0.0f;
+    float p_in_L = 0.0f;
+    float v_in_L = 0.0f;
+    float kp_in_L = 2.0f;
+    float kd_in_L = 1.0f;
+    float t_in_L= 0.0f;
+
+    float p_in_R = 0.0f;
+    float v_in_R = 0.0f;
+    float kp_in_R = 2.0f;
+    float kd_in_R = 1.0f;
+    float t_in_R= 0.0f;
 };
 
-struct CAN_Command
-{
-  MotorCommand Mot_L;
-  MotorCommand Mot_R;
-};
 
 
 unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
@@ -87,13 +81,13 @@ void EnterMotorMode() {
   
   if (CAN.availableForWrite()==0)
   {
-    CAN.beginPacket(CAN_ID_R,dlc,false);
+    CAN.beginPacket(CAN_ID_L,dlc,false);
   for (int i =0; i<=7;i++){
     CAN.write(buf[i]);
   }
   CAN.endPacket();
   delay(5);
-  CAN.beginPacket(CAN_ID_L,dlc,false);
+  CAN.beginPacket(CAN_ID_R,dlc,false);
   for (int i =0; i<=7;i++){
     CAN.write(buf[i]);
   }
@@ -105,13 +99,13 @@ void EnterMotorMode() {
 void ExitMotorMode() {
   /// Disable the Motor ///
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfd};
-  CAN.beginPacket(CAN_ID_L,dlc,false);
+  CAN.beginPacket(CAN_ID_R,dlc,false);
   for (int i =0; i<=7;i++){
     CAN.write(buf[i]);
   }
   CAN.endPacket();
   delay(5);
-  CAN.beginPacket(CAN_ID_R,dlc,false);
+  CAN.beginPacket(CAN_ID_L,dlc,false);
   for (int i =0; i<=7;i++){
     CAN.write(buf[i]);
   }
@@ -122,29 +116,30 @@ void SetZero() {
   /// Sets current encoder position to 0 rad ///
   unsigned char buf[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe};
 
-    CAN.beginPacket(CAN_ID_R,dlc,false);
-    for (int i =0; i<=7;i++){
-      CAN.write(buf[i]);
-    }
-    CAN.endPacket();
-    Serial.println("zero R");
-
+  if(CAN.availableForWrite()==0){
     CAN.beginPacket(CAN_ID_L,dlc,false);
     for (int i =0; i<=7;i++){
       CAN.write(buf[i]);
     }
     CAN.endPacket();
+    Serial.println("zero R");
+    delay(5);
+    CAN.beginPacket(CAN_ID_R,dlc,false);
+    for (int i =0; i<=7;i++){
+      CAN.write(buf[i]);
+    }
+    CAN.endPacket();
     Serial.println("zero L");
-
+  }
 }
 
-void pack_cmd(float CAN_ID, struct MotorCommand command) {
+void pack_cmd(CAN_Tx command) {
   // Send command to the motor///
-  float p_des = constrain(command.p_in, P_MIN, P_MAX);
-  float v_des = constrain(command.v_in, V_MIN, V_MAX);
-  float kp = constrain(command.kp_in, KP_MIN, KP_MAX);
-  float kd = constrain(command.kd_in, KD_MIN, KD_MAX);
-  float t_ff = constrain(command.t_in, T_MIN, T_MAX);
+  float p_des = constrain(command.p_in_L, P_MIN, P_MAX);
+  float v_des = constrain(command.v_in_L, V_MIN, V_MAX);
+  float kp = constrain(command.kp_in_L, KP_MIN, KP_MAX);
+  float kd = constrain(command.kd_in_L, KD_MIN, KD_MAX);
+  float t_ff = constrain(command.t_in_L, T_MIN, T_MAX);
 
   unsigned int p_int = float_to_uint(p_des, P_MIN, P_MAX, 16);
   unsigned int v_int = float_to_uint(v_des, V_MIN, V_MAX, 12);
@@ -152,43 +147,62 @@ void pack_cmd(float CAN_ID, struct MotorCommand command) {
   unsigned int kd_int = float_to_uint(kd, KD_MIN, KD_MAX, 12);
   unsigned int t_int = float_to_uint(t_ff, T_MIN, T_MAX, 12);
 
-  unsigned char buf[8] = {(p_int >>8), (p_int & 0xff),(v_int >> 4),(((v_int & 0xf) << 4) | (kp_int >> 8)),(kp_int & 0xff),(kd_int >> 4),(((kd_int & 0xf) << 4) | (t_int >> 8)),(t_int & 0xff)};
-  CAN.beginPacket(CAN_ID,dlc,false);
+  unsigned char bufL[8] = {(p_int >>8), (p_int & 0xff),(v_int >> 4),(((v_int & 0xf) << 4) | (kp_int >> 8)),(kp_int & 0xff),(kd_int >> 4),(((kd_int & 0xf) << 4) | (t_int >> 8)),(t_int & 0xff)};
   
+  p_des = constrain(command.p_in_R, P_MIN, P_MAX);
+  v_des = constrain(command.v_in_R, V_MIN, V_MAX);
+  kp = constrain(command.kp_in_R, KP_MIN, KP_MAX);
+  kd = constrain(command.kd_in_R, KD_MIN, KD_MAX);
+  t_ff = constrain(command.t_in_R, T_MIN, T_MAX);
+
+  p_int = float_to_uint(p_des, P_MIN, P_MAX, 16);
+  v_int = float_to_uint(v_des, V_MIN, V_MAX, 12);
+  kp_int = float_to_uint(kp, KP_MIN, KP_MAX, 12);
+  kd_int = float_to_uint(kd, KD_MIN, KD_MAX, 12);
+  t_int = float_to_uint(t_ff, T_MIN, T_MAX, 12);
+  unsigned char bufR[8] = {(p_int >>8), (p_int & 0xff),(v_int >> 4),(((v_int & 0xf) << 4) | (kp_int >> 8)),(kp_int & 0xff),(kd_int >> 4),(((kd_int & 0xf) << 4) | (t_int >> 8)),(t_int & 0xff)};
+  
+if(CAN.availableForWrite()==0){
+  CAN.beginPacket(CAN_ID_L,dlc,false);
   for (int i =0; i<=7;i++){
-    CAN.write(buf[i]);
+    CAN.write(bufL[i]);
   }
   CAN.endPacket();
   delay(5);
-
+  CAN.beginPacket(CAN_ID_R,dlc,false);
+  for (int i =0; i<=7;i++){
+    CAN.write(bufR[i]);
+  }
+  CAN.endPacket();
+  delay(5);
+}
 }
 
 
-void unpack_reply(int packetSize) {
+CAN_Rx unpack_reply() {
   byte bufL[8];
   byte bufR[8];
-  struct CAN_Reply reply;
+  struct CAN_Rx reply;
 
   CAN.filter(1);
   Serial.println("read 1");
-  packetSize = CAN.parsePacket();
+  unsigned int packetSize = CAN.parsePacket();
   /// Listen to  CAN ///
   if (packetSize){
       while (CAN.available()) {
         CAN.readBytes(bufL,8);
-        Serial.println("reads 2");
-    }
-    unsigned int p_int = (bufL[1] << 8) | bufL[2];
-    unsigned int v_int = (bufL[3] << 4) | (bufR[4] >> 4);
-    unsigned int i_int = ((bufL[4] & 0xf) << 8) | bufL[5];
+        Serial.println("reads 1");
+        Serial.print(packetSize);
+      }
+      unsigned int p_int = (bufL[1] << 8) | bufL[2];
+      unsigned int v_int = (bufL[3] << 4) | (bufL[4] >> 4);
+      unsigned int i_int = ((bufL[4] & 0xf) << 8) | bufL[5];
 
-    reply.positionL = uint_to_float(p_int, P_MIN, P_MAX, 16);
-    reply.velocityL= uint_to_float(v_int, V_MIN, V_MAX, 12); //rad/s
-    reply.torqueL = uint_to_float(i_int, -T_MAX, T_MAX, 12); //rad
+      reply.positionL = uint_to_float(p_int, P_MIN, P_MAX, 16);
+      reply.velocityL= uint_to_float(v_int, V_MIN, V_MAX, 12); //rad/s
+      reply.torqueL = uint_to_float(i_int, -T_MAX, T_MAX, 12); //rad
 
-    for (int i=0; i<=7; i++){
-      Serial.println(bufR[i]);
-    }
+    Serial.println("id: "+String(bufL[0]) + " pos: "+String(reply.positionL) );
   }
 
   CAN.filter(2);
@@ -199,23 +213,104 @@ void unpack_reply(int packetSize) {
       while (CAN.available()) {
         CAN.readBytes(bufR,8);
         Serial.println("reads 2");
+        Serial.print(packetSize);
+
+      unsigned int p_int = (bufR[1] << 8) | bufR[2];
+      unsigned int v_int = (bufR[3] << 4) | (bufR[4] >> 4);
+      unsigned int i_int = ((bufR[4] & 0xf) << 8) | bufR[5];
+
+      reply.positionR = uint_to_float(p_int, P_MIN, P_MAX, 16);
+      reply.velocityR= uint_to_float(v_int, V_MIN, V_MAX, 12); //rad/s
+      reply.torqueR = uint_to_float(i_int, -T_MAX, T_MAX, 12); //rad
     }
-
-    unsigned int p_int = (bufR[1] << 8) | bufR[2];
-    unsigned int v_int = (bufR[3] << 4) | (bufR[4] >> 4);
-    unsigned int i_int = ((bufR[4] & 0xf) << 8) | bufR[5];
-
-    reply.positionR = uint_to_float(p_int, P_MIN, P_MAX, 16);
-    reply.velocityR= uint_to_float(v_int, V_MIN, V_MAX, 12); //rad/s
-    reply.torqueR = uint_to_float(i_int, -T_MAX, T_MAX, 12); //rad
-
-    for (int i=0; i<=7; i++){
-      Serial.println(bufR[i]);
-    }
+    Serial.println("id: "+String(bufR[0]) + " pos: "+String(reply.positionR) );
   }
-  delay(5000);
+  return reply;
   }
   
+struct Joint_origines
+{
+    float shoulder;
+    float leg;
+    float midpoint;
+
+};
+
+
+Joint_origines HomingL(CAN_Rx reply,float threshold,CAN_Tx command){
+    
+    Joint_origines origine;
+    
+    //goes to shoulder
+    while(abs(reply.torqueL)<=threshold){
+      command.p_in_L = constrain(command.p_in_L + Step, P_MIN, P_MAX);
+      pack_cmd(command);
+      reply = unpack_reply();
+      origine.shoulder = reply.positionL;
+    }
+    delay(500);
+    Serial.println("shoulder ok");
+    //goes to leg
+    while(reply.torqueL >= -threshold){
+      command.p_in_L = constrain(command.p_in_L - Step, P_MIN, P_MAX);
+      pack_cmd(command);
+      reply = unpack_reply();
+      origine.leg = reply.positionL;
+    }
+    delay(500);
+    Serial.println("leg ok");
+    origine.midpoint = abs(origine.leg-origine.shoulder)/2;
+    Serial.println(origine.midpoint);
+    reply = unpack_reply();
+
+    //move to new motor origine
+    while(abs(reply.positionR - (origine.leg+origine.midpoint))>=0.05){
+      reply = unpack_reply();
+      command.p_in_L = constrain(command.p_in_L + Step, P_MIN, P_MAX);
+      pack_cmd(command);
+      delay(10);
+    }
+    delay(1000);
+    return origine;
+}
+
+Joint_origines HomingR(CAN_Rx reply,float threshold,CAN_Tx command){
+    
+    Joint_origines origine;
+    
+    //goes to shoulder
+    while(abs(reply.torqueR)<=threshold){
+      command.p_in_R = constrain(command.p_in_R + Step, P_MIN, P_MAX);
+      pack_cmd(command);
+      reply = unpack_reply();
+      origine.leg = reply.positionR;
+    }
+    delay(500);
+    Serial.println("shoulder ok");
+    //goes to leg
+    while(reply.torqueR >= -threshold){
+      command.p_in_R = constrain(command.p_in_R - Step, P_MIN, P_MAX);
+      pack_cmd(command);
+      reply = unpack_reply();
+      origine.shoulder = reply.positionR;
+    }
+    delay(500);
+    Serial.println("leg ok");
+    origine.midpoint = abs(origine.leg-origine.shoulder)/2;
+    Serial.println(origine.midpoint);
+    reply = unpack_reply();
+
+    //move to new motor origine
+    while(abs(reply.positionR - (origine.leg-origine.midpoint))>=0.05){
+      reply = unpack_reply();
+      command.p_in_R = constrain(command.p_in_R + Step, P_MIN, P_MAX);
+      pack_cmd(command);
+      delay(10);
+    }
+    delay(1000);
+    return origine;
+}
+
 
 
  
