@@ -62,8 +62,9 @@ void setup() {
   delay(50);
 
   Motor_Rx = unpack_reply();
+  Serial.println(Motor_Rx.positionL);
   HomingL(Motor_Rx,1.0,Motor_Tx);
-  HomingR(Motor_Rx,1.0,Motor_Tx);
+  //HomingR(Motor_Rx,1.0,Motor_Tx);
 }
 
 

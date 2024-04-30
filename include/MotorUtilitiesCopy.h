@@ -92,7 +92,7 @@ void EnterMotorMode() {
     CAN.write(buf[i]);
   }
   CAN.endPacket();
-
+  Serial.println("Moytor mode");
   }
 }
 
@@ -184,7 +184,7 @@ CAN_Rx unpack_reply() {
   byte bufR[8];
   struct CAN_Rx reply;
 
-  CAN.filter(1);
+  CAN.filter(2);
   Serial.println("read 1");
   unsigned int packetSize = CAN.parsePacket();
   /// Listen to  CAN ///
@@ -205,7 +205,7 @@ CAN_Rx unpack_reply() {
     Serial.println("id: "+String(bufL[0]) + " pos: "+String(reply.positionL) );
   }
 
-  CAN.filter(2);
+  CAN.filter(1);
   Serial.println("read 2");
   packetSize = CAN.parsePacket();
   /// Listen to  CAN ///
@@ -246,6 +246,7 @@ Joint_origines HomingL(CAN_Rx reply,float threshold,CAN_Tx command){
       command.p_in_L = constrain(command.p_in_L + Step, P_MIN, P_MAX);
       pack_cmd(command);
       reply = unpack_reply();
+      Serial.println(reply.positionL);
       origine.shoulder = reply.positionL;
     }
     delay(500);
