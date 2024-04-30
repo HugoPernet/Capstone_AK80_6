@@ -23,6 +23,24 @@ CAN_Rx Motor_Rx_R;
 Joint_origines origine;
 bias bias_pitch;
 
+// initialize IMU Data
+float HipVel = 0.0;
+float HipAngle = 0.0;
+
+// initialize homing parameters
+float P0_shoulder = 0;
+float P0_hip = 0;
+float P0_midpt = 0;
+
+//Loop() Period
+float dt = 10;
+
+//Mechanical constant:
+const float StaticFrictionTorque = 0.25;
+float As = 4.0;
+float K2, C2, D2 = 0.1; // torque slope
+float R = 5;
+float midpoint;
 
 
 void setup() {
@@ -49,13 +67,51 @@ void setup() {
   Motor_Rx_R = unpack_reply_R();
   HomingR(Motor_Rx_R,1.0,Motor_Tx,origine);
 
-
+  Serial.println("Homed shoulder & hip");
+  Serial.println("CONTROL START");
+  delay(1000);
+  Motor_Tx.kd_in_L = 1;
+  Motor_Tx.kd_in_R = 1;
+  Motor_Tx.kp_in_L = 0;
+  Motor_Tx.kp_in_R = 0;
+  Serial1.println(origine.leg_L);
+  Serial1.println(origine.leg_R);
+  Serial1.println(origine.shoulder_L);
+  Serial1.println(origine.shoulder_R);
 }
 
 
 
 
 void loop() {
-  delay(1000);
+  
+  float time_now = millis();
+  HipVel = readgyro()-bias_pitch.velocity;
 
+  if (HipVel<0){
+    Motor_Tx.kd_in_L = 0.1;
+    Motor_Tx.kd_in_R = 0.1;
+  }
+  else{
+    Motor_Tx.kd_in_L = 0.5;
+    Motor_Tx.kd_in_R = 0.5;
+  }
+
+  //Read IMU
+  HipAngle = (round(readIMU())-bias_pitch.angle)-2.0; //deg
+
+  ////// Left /////
+  float Ts = As*sin((Motor_Rx_L.position-origine.shoulder_L)*R);
+  float Tleg = -As*sin(radians(HipAngle));
+
+  float Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
+  float Switch_shoulder = ((1/PI)*atan(degrees((Motor_Rx_L.position-origine.shoulder_L)*R) -3)+0.5);
+  float Ts_switch = Ts*Switch_shoulder + 0.5;
+  float Tleg_switch = Tleg*Switch_leg;
+    
+  Motor_Tx.t_in_L = Ts_switch+Tleg_switch;
+  Motor_Tx.t_in_L = constrain(Motor_Tx.t_in_L, T_MIN, T_MAX);
+
+  pack_cmd(Motor_Tx);
+  while (millis()-time_now < dt) {}
 }
