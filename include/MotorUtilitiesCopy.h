@@ -199,6 +199,7 @@ CAN_Rx unpack_reply_L() {
 
     Serial.println("id: "+String(bufL[0]) + " pos: "+String(reply.position) );
   }
+  return reply;
 }
 CAN_Rx unpack_reply_R() {
 
@@ -226,6 +227,7 @@ CAN_Rx unpack_reply_R() {
     
     Serial.println("id: "+String(bufR[0]) + " pos: "+String(reply.position) );
   }
+  return reply;
   }
   
 struct Joint_origines
