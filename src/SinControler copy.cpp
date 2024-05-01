@@ -14,10 +14,14 @@
 #define POT_C2 15   // A1
 #define POT_D2 14   // A0
 
+
+
+
 //////// Variable definition ////////
 
 //structs
-CAN_Tx Motor_Tx; // initialize Motor command and Motor reply variables
+CAN_Tx Motor_Tx_L;
+CAN_Tx Motor_Tx_R; // initialize Motor command and Motor reply variables
 CAN_Rx Motor_Rx_L;
 CAN_Rx Motor_Rx_R;
 Joint_origines origine_L;
@@ -63,18 +67,22 @@ void setup() {
   SetZero();
   delay(50);
 
+  //CAN.onReceive(onCANReceive);
+
+
   Motor_Rx_L = unpack_reply_L();
-  origine_L = HomingL(Motor_Rx_L,1.0,Motor_Tx);
+  origine_L = HomingL(Motor_Rx_L,1.0,Motor_Tx_L);
+  
   Motor_Rx_R = unpack_reply_R();
-  origine_R = HomingR(Motor_Rx_R,1.0,Motor_Tx);
+  origine_R = HomingR(Motor_Rx_R,1.0,Motor_Tx_R);
 
   Serial.println("Homed shoulder & hip");
   Serial.println("CONTROL START");
   delay(1000);
-  Motor_Tx.kd_in_L = 1;
-  Motor_Tx.kd_in_R = 1;
-  Motor_Tx.kp_in_L = 0;
-  Motor_Tx.kp_in_R = 0;
+  Motor_Tx_L.kd_in = 1;
+  Motor_Tx_R.kd_in = 1;
+  Motor_Tx_L.kp_in = 0;
+  Motor_Tx_R.kp_in = 0;
   Serial.println(origine_L.leg);
   Serial.println(origine_R.leg);
   Serial.println(origine_L.shoulder);
@@ -86,49 +94,16 @@ void setup() {
 
 void loop() {
 
-  float time_now = millis();
-  Motor_Rx_L = unpack_reply_L();
-  Motor_Rx_R = unpack_reply_R();
-  HipVel = readgyro()-bias_pitch.velocity;
 
-  if (HipVel<0){
-    Motor_Tx.kd_in_L = 0.3;
-    Motor_Tx.kd_in_R = 0.3;
-  }
-  else{
-    Motor_Tx.kd_in_L = 0.5;
-    Motor_Tx.kd_in_R = 0.5;
-  }
+  
+  
+  HipVel = readgyro()-bias_pitch.velocity;
 
   //Read IMU
   HipAngle = (round(readIMU())-bias_pitch.angle)-2.0; //deg
+  torqueL(Motor_Rx_L,HipAngle,Motor_Tx_L,origine_L);
+  torqueR(Motor_Rx_R,HipAngle,Motor_Tx_R,origine_R);
 
-  ////// Left /////
-  float Ts = As*sin((Motor_Rx_L.position-origine_L.shoulder)*R);
-  float Tleg = -As*sin(radians(HipAngle));
+  //Serial.println("pL :"+String(degrees(Motor_Rx_L.position-origine_L.leg))+ "  pR :"+String(degrees(Motor_Rx_R.position-origine_L.leg))+ "  T_L :"+String(-Motor_Rx_L.torque) +"  T_R :"+String(-Motor_Rx_R.torque)+ " hip: "+String(HipAngle) );
 
-  float Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
-  float Switch_shoulder = ((1/PI)*atan(degrees((Motor_Rx_L.position-origine_L.shoulder)*R) -3)+0.5);
-  float Ts_switch = Ts*Switch_shoulder + 0.5;
-  float Tleg_switch = Tleg*Switch_leg;
-    
-  Motor_Tx.t_in_L = Ts_switch+Tleg_switch;
-  Motor_Tx.t_in_L = constrain(Motor_Tx.t_in_L, T_MIN, T_MAX);
-
-  ////// Right /////
-  Ts = As*sin((Motor_Rx_R.position-origine_R.shoulder)*R);
-  Tleg = As*sin(radians(HipAngle));
-
-  Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
-  Switch_shoulder = 1-((1/PI)*atan(degrees((Motor_Rx_R.position-origine_R.shoulder)*R) +10)+0.5);
-
-  Ts_switch = Ts*Switch_shoulder -0.5;
-  Tleg_switch = Tleg*Switch_leg;
-
-  Motor_Tx.t_in_R = Ts_switch+Tleg_switch;
-  Motor_Tx.t_in_R = constrain(Motor_Tx.t_in_R, T_MIN, T_MAX);
-
-  pack_cmd(Motor_Tx);
-  Serial.println("pL :"+String(degrees(Motor_Rx_L.position-origine_L.leg))+ "  pR :"+String(degrees(Motor_Rx_R.position-origine_L.leg))+ "  T_L :"+String(-Motor_Rx_L.torque) +"  T_R :"+String(-Motor_Rx_R.torque) );
-  while (millis()-time_now < dt) {}
 }
