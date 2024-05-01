@@ -101,8 +101,9 @@ void loop() {
 
   //Read IMU
   HipAngle = (round(readIMU())-bias_pitch.angle)-2.0; //deg
-  torqueL(Motor_Rx_L,HipAngle,Motor_Tx_L,origine_L);
-  torqueR(Motor_Rx_R,HipAngle,Motor_Tx_R,origine_R);
+  torqueL(HipAngle,origine_L);
+  torqueR(HipAngle,origine_R);
+
 
   //Serial.println("pL :"+String(degrees(Motor_Rx_L.position-origine_L.leg))+ "  pR :"+String(degrees(Motor_Rx_R.position-origine_L.leg))+ "  T_L :"+String(-Motor_Rx_L.torque) +"  T_R :"+String(-Motor_Rx_R.torque)+ " hip: "+String(HipAngle) );
 

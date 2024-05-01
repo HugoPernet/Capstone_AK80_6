@@ -220,6 +220,7 @@ CAN_Rx unpack_reply_L() {
   unsigned int packetSize = CAN.parsePacket();
   byte buf[8];
   CAN_Rx reply;
+  float currentTime = millis();
 
   /// Listen to  CAN ///
   if (packetSize){
@@ -227,8 +228,12 @@ CAN_Rx unpack_reply_L() {
         CAN.filter(0x01,0xFF);
         CAN.readBytes(buf,8);
         CAN.filter(0x01,0xFF);
-        Serial.println(CAN.packetId());
+      // while ((millis()-currentTime)<1)
+      // {
+      //   Serial.println("Wait on L");
+      // }
       }
+      
 
       unsigned int p_int = (buf[1] << 8) | buf[2];
       unsigned int v_int = (buf[3] << 4) | (buf[4] >> 4);
@@ -248,6 +253,7 @@ CAN_Rx unpack_reply_R() {
   unsigned int packetSize = CAN.parsePacket();
   byte buf[8];
   CAN_Rx reply;
+  float currentTime = millis();
 
   /// Listen to  CAN ///
   if (packetSize){
@@ -255,8 +261,15 @@ CAN_Rx unpack_reply_R() {
         CAN.filter(0x02,0xFF);
         CAN.readBytes(buf,8);
         CAN.filter(0x02,0xFF);
-        Serial.println(CAN.packetId());
+      // while ((millis()-currentTime)<1)
+      // {
+      //   Serial.println("Wait on R");
+      // }
       }
+
+
+      
+      
 
       unsigned int p_int = (buf[1] << 8) | buf[2];
       unsigned int v_int = (buf[3] << 4) | (buf[4] >> 4);
@@ -350,8 +363,10 @@ Joint_origines HomingR(CAN_Rx reply,float threshold,CAN_Tx command){
     return origine;
 }
 
-void torqueL(CAN_Rx Motor_Rx_L,float HipAngle,CAN_Tx Motor_Tx_L,Joint_origines origine_L){
-  float As = 4.0;
+void torqueL(float HipAngle,Joint_origines origine_L){
+  CAN_Rx Motor_Rx_L;
+  CAN_Tx Motor_Tx_L;
+  float As = 2.0;
   Motor_Rx_L = unpack_reply_L();
   float R = 5;
   ////// Left /////
@@ -363,13 +378,15 @@ void torqueL(CAN_Rx Motor_Rx_L,float HipAngle,CAN_Tx Motor_Tx_L,Joint_origines o
   float Ts_switch = Ts*Switch_shoulder + 0.5;
   float Tleg_switch = Tleg*Switch_leg;
     
-  Motor_Tx_L.t_in = Ts_switch+Tleg_switch;
+  Motor_Tx_L.t_in = 1;//Ts_switch+Tleg_switch;
   Motor_Tx_L.t_in = constrain(Motor_Tx_L.t_in, T_MIN, T_MAX);
   pack_cmd(Motor_Tx_L,CAN_ID_L);
 }
 
-void torqueR(CAN_Rx Motor_Rx_R,float HipAngle,CAN_Tx Motor_Tx_R, Joint_origines origine_R){
-  float As = 4.0;
+void torqueR(float HipAngle, Joint_origines origine_R){
+  CAN_Rx Motor_Rx_R;
+  CAN_Tx Motor_Tx_R;
+  float As = 2.0;
   Motor_Rx_R = unpack_reply_R();
   ////// Right /////
   float R = 5;
@@ -382,7 +399,7 @@ void torqueR(CAN_Rx Motor_Rx_R,float HipAngle,CAN_Tx Motor_Tx_R, Joint_origines 
   float Ts_switch_R = Ts_R*Switch_shoulder_R -0.5;
   float Tleg_switch_R = Tleg_R*Switch_leg_R;
 
-  Motor_Tx_R.t_in = Ts_switch_R+Tleg_switch_R;
+  Motor_Tx_R.t_in =-1;// Ts_switch_R+Tleg_switch_R;
   Motor_Tx_R.t_in = constrain(Motor_Tx_R.t_in, T_MIN, T_MAX);
 
   pack_cmd(Motor_Tx_R,CAN_ID_R);
