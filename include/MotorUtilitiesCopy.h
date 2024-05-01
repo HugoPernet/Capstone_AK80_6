@@ -242,7 +242,7 @@ CAN_Rx unpack_reply_L() {
       reply.position = uint_to_float(p_int, P_MIN, P_MAX, 16);
       reply.velocity= uint_to_float(v_int, V_MIN, V_MAX, 12); //rad/s
       reply.torque = uint_to_float(i_int, -T_MAX, T_MAX, 12); //rad
-      Serial.println("L "+String(reply.position));
+      //Serial.println("L "+String(reply.position));
   }
 
   return reply;
@@ -278,7 +278,7 @@ CAN_Rx unpack_reply_R() {
       reply.position = uint_to_float(p_int, P_MIN, P_MAX, 16);
       reply.velocity= uint_to_float(v_int, V_MIN, V_MAX, 12); //rad/s
       reply.torque = uint_to_float(i_int, -T_MAX, T_MAX, 12); //rad
-      Serial.println("R "+String(reply.position));
+      //Serial.println("R "+String(reply.position));
   }
 
   return reply;
@@ -363,35 +363,33 @@ Joint_origines HomingR(CAN_Rx reply,float threshold,CAN_Tx command){
     return origine;
 }
 
-void torqueL(float HipAngle,Joint_origines origine_L){
-  CAN_Rx Motor_Rx_L;
+void torqueL(CAN_Rx Motor_Rx_L,float HipAngle,Joint_origines origine_L){
   CAN_Tx Motor_Tx_L;
   float As = 2.0;
-  Motor_Rx_L = unpack_reply_L();
+  float Al = 4.0;
   float R = 5;
   ////// Left /////
   float Ts = As*sin((Motor_Rx_L.position-origine_L.shoulder)*R);
-  float Tleg = -As*sin(radians(HipAngle));
+  float Tleg = -Al*sin(radians(HipAngle));
 
   float Switch_leg = (1/PI)*atan(HipAngle -3)+0.5; 
   float Switch_shoulder = ((1/PI)*atan(degrees((Motor_Rx_L.position-origine_L.shoulder)*R) -3)+0.5);
   float Ts_switch = Ts*Switch_shoulder + 0.5;
   float Tleg_switch = Tleg*Switch_leg;
     
-  Motor_Tx_L.t_in = 1;//Ts_switch+Tleg_switch;
+  Motor_Tx_L.t_in = Ts_switch+Tleg_switch;
   Motor_Tx_L.t_in = constrain(Motor_Tx_L.t_in, T_MIN, T_MAX);
   pack_cmd(Motor_Tx_L,CAN_ID_L);
 }
 
-void torqueR(float HipAngle, Joint_origines origine_R){
-  CAN_Rx Motor_Rx_R;
+void torqueR(CAN_Rx Motor_Rx_R,float HipAngle,Joint_origines origine_R){
   CAN_Tx Motor_Tx_R;
   float As = 2.0;
-  Motor_Rx_R = unpack_reply_R();
+  float Al = 4.0;
   ////// Right /////
   float R = 5;
   float Ts_R = As*sin((Motor_Rx_R.position-origine_R.shoulder)*R);
-  float Tleg_R = As*sin(radians(HipAngle));
+  float Tleg_R = Al*sin(radians(HipAngle));
 
   float Switch_leg_R = (1/PI)*atan(HipAngle -3)+0.5; 
   float Switch_shoulder_R = 1-((1/PI)*atan(degrees((Motor_Rx_R.position-origine_R.shoulder)*R) +10)+0.5);
@@ -399,7 +397,7 @@ void torqueR(float HipAngle, Joint_origines origine_R){
   float Ts_switch_R = Ts_R*Switch_shoulder_R -0.5;
   float Tleg_switch_R = Tleg_R*Switch_leg_R;
 
-  Motor_Tx_R.t_in =-1;// Ts_switch_R+Tleg_switch_R;
+  Motor_Tx_R.t_in =Ts_switch_R+Tleg_switch_R;
   Motor_Tx_R.t_in = constrain(Motor_Tx_R.t_in, T_MIN, T_MAX);
 
   pack_cmd(Motor_Tx_R,CAN_ID_R);

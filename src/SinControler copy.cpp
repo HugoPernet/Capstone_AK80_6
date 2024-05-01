@@ -94,17 +94,21 @@ void setup() {
 
 void loop() {
 
-
-  
-  
   HipVel = readgyro()-bias_pitch.velocity;
 
   //Read IMU
   HipAngle = (round(readIMU())-bias_pitch.angle)-2.0; //deg
-  torqueL(HipAngle,origine_L);
-  torqueR(HipAngle,origine_R);
+  Motor_Rx_R = unpack_reply_R();
+  delay(5);
+  torqueR(Motor_Rx_L,HipAngle,origine_R);
+  delay(5);
+  Motor_Rx_L = unpack_reply_L();
+  delay(5);
+  torqueL(Motor_Rx_R,HipAngle,origine_L);
+  delay(5);
 
+  
 
-  //Serial.println("pL :"+String(degrees(Motor_Rx_L.position-origine_L.leg))+ "  pR :"+String(degrees(Motor_Rx_R.position-origine_L.leg))+ "  T_L :"+String(-Motor_Rx_L.torque) +"  T_R :"+String(-Motor_Rx_R.torque)+ " hip: "+String(HipAngle) );
+  Serial.println("pL :"+String(degrees(Motor_Rx_R.position-origine_L.leg))+ "  pR :"+String(degrees(Motor_Rx_L.position-origine_L.leg))+ "  T_L :"+String(Motor_Rx_R.torque) +"  T_R :"+String(Motor_Rx_L.torque)+ " hip: "+String(HipAngle) );
 
 }
