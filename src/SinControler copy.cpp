@@ -3,19 +3,9 @@
 #include <MotorUtilitiesCopy.h>
 #include <IMUutilities.h>
 
-
-//POTS for torque amplitude
-#define POT_K1 17   // A3
-#define POT_C1 18   // A4
-#define POT_D1 19   // A5
-
-//POTS for torque slope
-#define POT_K2 16   // A2
-#define POT_C2 15   // A1
-#define POT_D2 14   // A0
-
-
-
+//Button
+#define IMU_RESET_BTN_1 9 // IMU reset button
+#define IMU_RESET_BTN_2 9 // IMU reset button=
 
 //////// Variable definition ////////
 
@@ -47,6 +37,18 @@ float K2, C2, D2 = 0.1; // torque slope
 float R = 5;
 float midpoint;
 
+// initialize button
+int IMU_BTN_STATE1 = 0;
+int IMU_BTN_STATE2 = 0;
+unsigned long debounceDelay = 50;
+unsigned long myTime=millis();
+
+void isr1() {  // the function to be called when interrupt is triggered
+  IMU_BTN_STATE1 = !IMU_BTN_STATE1;
+}
+void isr2() {  // the function to be called when interrupt is triggered
+  IMU_BTN_STATE2= 1;
+}
 
 void setup() {
   //starts Serial Com
@@ -56,6 +58,12 @@ void setup() {
   //starts Can com
   SetupCan();
   delay(500);
+
+  //buttons
+  pinMode(IMU_RESET_BTN_1, INPUT);
+  attachInterrupt(digitalPinToInterrupt(IMU_RESET_BTN_1), isr1, RISING);
+  pinMode(IMU_RESET_BTN_2, INPUT);
+  attachInterrupt(digitalPinToInterrupt(IMU_RESET_BTN_2), isr2, RISING);
 
   initializeIMU();
   bias_pitch = calculate_bias();
@@ -68,7 +76,6 @@ void setup() {
   delay(50);
 
   //CAN.onReceive(onCANReceive);
-
 
   Motor_Rx_L = unpack_reply_L();
   origine_L = HomingL(Motor_Rx_L,1.0,Motor_Tx_L);
@@ -93,16 +100,52 @@ void setup() {
 
 
 void loop() {
+  if (IMU_BTN_STATE2 == 1) {
+    Serial.println("RE-HOMING");
+    Motor_Tx_L.kd_in = 1; Motor_Tx_R.kd_in = 1;
+    Motor_Tx_L.kp_in = 2; Motor_Tx_R.kp_in = 2;
+    Motor_Tx_L.p_in = 0; Motor_Tx_R.kp_in = 0;
+    Motor_Tx_L.t_in = 0;  Motor_Tx_R.t_in = 0;
 
+    pack_cmd(Motor_Tx_L,CAN_ID_L);
+    pack_cmd(Motor_Tx_R,CAN_ID_R);
+    delay(1000);
+    SetZero();
 
-  
-  
-  HipVel = readgyro()-bias_pitch.velocity;
+    Motor_Rx_L = unpack_reply_L();
+    origine_L = HomingL(Motor_Rx_L,1.0,Motor_Tx_L);
+    
+    Motor_Rx_R = unpack_reply_R();
+    origine_R = HomingR(Motor_Rx_R,1.0,Motor_Tx_R);
 
-  //Read IMU
-  HipAngle = (round(readIMU())-bias_pitch.angle)-2.0; //deg
-  torqueL(Motor_Rx_L,HipAngle,Motor_Tx_L,origine_L);
-  torqueR(Motor_Rx_R,HipAngle,Motor_Tx_R,origine_R);
+    Motor_Tx_L.kd_in = 1; Motor_Tx_R.kd_in = 1;
+    Motor_Tx_L.kp_in = 0; Motor_Tx_R.kp_in = 0;
+
+    Serial.println(origine_L.leg);
+    Serial.println(origine_R.leg);
+    Serial.println(origine_L.shoulder);
+    Serial.println(origine_R.shoulder);
+
+    Serial.println("Homed shoulder & hip");
+    Serial.println("CONTROL START");
+    delay(1000);
+    IMU_BTN_STATE2 = 0;
+  }
+  if (IMU_BTN_STATE1 == 1) {
+    Serial.println("EMERGENCY SHUT DOWN");
+    Motor_Tx_L.kp_in = 0; Motor_Tx_R.kp_in = 0;
+    Motor_Tx_L.kd_in = 0; Motor_Tx_R.kd_in = 0;
+    Motor_Tx_L.t_in = 0;  Motor_Tx_R.t_in = 0;
+    pack_cmd(Motor_Tx_L,CAN_ID_L);
+    pack_cmd(Motor_Tx_R,CAN_ID_R);
+  }
+  else {
+    //Read IMU
+    HipVel = readgyro()-bias_pitch.velocity;
+    HipAngle = (round(readIMU())-bias_pitch.angle)-2.0; //deg
+    torqueL(Motor_Rx_L,HipAngle,Motor_Tx_L,origine_L);
+    torqueR(Motor_Rx_R,HipAngle,Motor_Tx_R,origine_R);
+  }
 
   //Serial.println("pL :"+String(degrees(Motor_Rx_L.position-origine_L.leg))+ "  pR :"+String(degrees(Motor_Rx_R.position-origine_L.leg))+ "  T_L :"+String(-Motor_Rx_L.torque) +"  T_R :"+String(-Motor_Rx_R.torque)+ " hip: "+String(HipAngle) );
 
