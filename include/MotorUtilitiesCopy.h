@@ -224,26 +224,21 @@ CAN_Rx unpack_reply_R() {
   
 struct Joint_origines
 {
-    float shoulder_L;
-    float leg_L;
-    float midpoint_L;
-
-    float shoulder_R;
-    float leg_R;
-    float midpoint_R;
+    float shoulder;
+    float leg;
+    float midpoint;
 
 };
 
 
-void HomingL(CAN_Rx reply,float threshold,CAN_Tx command,Joint_origines origine){
-    
+Joint_origines HomingL(CAN_Rx reply,float threshold,CAN_Tx command){
+    Joint_origines origine;
     //goes to shoulder
     while(abs(reply.torque)<=threshold){
       command.p_in_L = constrain(command.p_in_L + Step, P_MIN, P_MAX);
       pack_cmd(command);
       reply = unpack_reply_L();
-      Serial.println(reply.position);
-      origine.shoulder_L = reply.position;
+      origine.shoulder = reply.position;
     }
     delay(500);
     Serial.println("shoulder ok");
@@ -252,31 +247,33 @@ void HomingL(CAN_Rx reply,float threshold,CAN_Tx command,Joint_origines origine)
       command.p_in_L = constrain(command.p_in_L - Step, P_MIN, P_MAX);
       pack_cmd(command);
       reply = unpack_reply_L();
-      origine.leg_L = reply.position;
+      origine.leg = reply.position;
     }
     delay(500);
     Serial.println("leg ok");
-    origine.midpoint_L = abs(origine.leg_L-origine.shoulder_L)/2;
-    Serial.println(origine.midpoint_L);
+    origine.midpoint = abs(origine.leg-origine.shoulder)/2;
+    Serial.println(origine.midpoint);
     reply = unpack_reply_L();
 
     //move to new motor origine
-    while(abs(reply.position - (origine.leg_L+origine.midpoint_L))>=1){
+    while(abs(reply.position - (origine.leg+origine.midpoint))>=0.5){
       reply = unpack_reply_L();
       command.p_in_L = constrain(command.p_in_L + Step, P_MIN, P_MAX);
       pack_cmd(command);
       delay(10);
     }
     Serial.println("Homing L -> done");
+    return origine;
 }
 
-void HomingR(CAN_Rx reply,float threshold,CAN_Tx command,Joint_origines origine){
+Joint_origines HomingR(CAN_Rx reply,float threshold,CAN_Tx command){
+  Joint_origines origine;
     //goes to shoulder
     while(abs(reply.torque)<=threshold){
       command.p_in_R = constrain(command.p_in_R + Step, P_MIN, P_MAX);
       pack_cmd(command);
       reply = unpack_reply_R();
-      origine.leg_R = reply.position;
+      origine.leg = reply.position;
     }
     delay(500);
     Serial.println("leg ok");
@@ -285,22 +282,23 @@ void HomingR(CAN_Rx reply,float threshold,CAN_Tx command,Joint_origines origine)
       command.p_in_R = constrain(command.p_in_R - Step, P_MIN, P_MAX);
       pack_cmd(command);
       reply = unpack_reply_R();
-      origine.shoulder_R = reply.position;
+      origine.shoulder = reply.position;
     }
     delay(500);
     Serial.println("shoulder ok");
-    origine.midpoint_R = abs(origine.leg_R-origine.shoulder_R)/2;
-    Serial.println(origine.midpoint_R);
+    origine.midpoint = abs(origine.leg-origine.shoulder)/2;
+    Serial.println(origine.midpoint);
     reply = unpack_reply_R();
 
     //move to new motor origine
-    while(abs(reply.position - (origine.leg_R-origine.midpoint_R))>=0.1){
+    while(abs(reply.position - (origine.leg-origine.midpoint))>=0.05){
       reply = unpack_reply_R();
       command.p_in_R = constrain(command.p_in_R + Step, P_MIN, P_MAX);
       pack_cmd(command);
       delay(10);
     }
     Serial.println("Homing R -> done");
+    return origine;
 }
 
 

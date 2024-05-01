@@ -162,7 +162,7 @@ Tleg = As*sin(Y);
 Switch_leg = (1/pi)*atan(rad2deg(Y) -3)+0.5; 
 Switch_shoulder = 1-((1/pi)*atan(rad2deg(Y)-10)+0.5);
 
-Ts_switch = Ts.*Switch_shoulder.*(1-((1/pi)*atan(rad2deg((X-zero_shoulder)*R) -3)+0.5));
+Ts_switch = Ts.*(1-((1/pi)*atan(rad2deg((X-zero_shoulder)*R) -3)+0.5));
 Tleg_switch = Tleg.*Switch_leg;
 
 switching = -0.5*(1/pi)*atan(rad2deg(Y)-20)-0.1;
