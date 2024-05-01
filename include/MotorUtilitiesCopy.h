@@ -3,17 +3,12 @@
 
 CANSAME5x CAN;
 
-
-
-
-
 struct CAN_Rx
 {
     float position = 0.0f;
     float velocity = 0.0f;
     float torque= 0.0f;
 };
-
 
 struct CAN_Tx
 {
@@ -29,8 +24,6 @@ struct rep
   CAN_Rx replyL;
   CAN_Rx replyR;
 };
-
-
 
 unsigned int float_to_uint(float x, float x_min, float x_max, int bits) {
   /// Converts a float to an unsigned int, given range and number of bits ///
@@ -59,8 +52,6 @@ float uint_to_float(unsigned int x_int, float x_min, float x_max, int bits) {
   }
   return pgg;
 }
-
-
 
 void SetupCan(){
     // initialize CAN com
@@ -212,9 +203,10 @@ rep unpack_reply() {
         
       }
   }
-  Serial.println("L "+String(reply.replyL.position)+ "R "+String(reply.replyR.position));
+  Serial.println("L "+String(reply.replyL.position)+ " R "+String(reply.replyR.position));
   return reply;
 }
+
 CAN_Rx unpack_reply_L() {
 
   unsigned int packetSize = CAN.parsePacket();

@@ -1,5 +1,6 @@
 {
     "files.associations": {
         "plyconfig.json": "jsonc"
-    }
+    },
+    "cmake.sourceDirectory": "/Users/songheemin/Documents/01_Grad/Research/G6/Capstone_AK80_6/lib/Adafruit_BusIO-master"
 }
