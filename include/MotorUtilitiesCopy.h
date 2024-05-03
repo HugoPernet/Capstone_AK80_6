@@ -357,8 +357,10 @@ Joint_origines HomingR(CAN_Rx reply,float threshold,CAN_Tx command){
 
 void torqueL(CAN_Rx Motor_Rx_L,float HipAngle,Joint_origines origine_L){
   CAN_Tx Motor_Tx_L;
+
+  
   float As = 2.0;
-  float Al = 4.0;
+  float Al = 6.0;
   float R = 5;
   ////// Left /////
   float Ts = As*sin((Motor_Rx_L.position-origine_L.shoulder)*R);
@@ -376,8 +378,10 @@ void torqueL(CAN_Rx Motor_Rx_L,float HipAngle,Joint_origines origine_L){
 
 void torqueR(CAN_Rx Motor_Rx_R,float HipAngle,Joint_origines origine_R){
   CAN_Tx Motor_Tx_R;
-  float As = 2.0;
-  float Al = 4.0;
+  
+
+  float As = 2.5;
+  float Al = 6.0;
   ////// Right /////
   float R = 5;
   float Ts_R = As*sin((Motor_Rx_R.position-origine_R.shoulder)*R);
