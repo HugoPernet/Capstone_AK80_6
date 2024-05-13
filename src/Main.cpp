@@ -1,6 +1,6 @@
 #include "Arduino.h"
 #include <potentiometerUtilities.h>
-#include <MotorUtilitiesCopy.h>
+#include <MotorUtilities.h>
 #include <IMUutilities.h>
 
 //Button
@@ -52,8 +52,8 @@ void isr2() {  // the function to be called when interrupt is triggered
 
 void setup() {
   //starts Serial Com
-  Serial.begin(11250);
-  while (!Serial) delay(10);
+  // Serial.begin(11250);
+  // while (!Serial) delay(10);
 
   //starts Can com
   SetupCan();
@@ -84,17 +84,17 @@ void setup() {
   Motor_Rx_R = unpack_reply_R();
   origine_R = HomingR(Motor_Rx_R,1.0,Motor_Tx_R);
 
-  Serial.println("Homed shoulder & hip");
-  Serial.println("CONTROL START");
+  // Serial.println("Homed shoulder & hip");
+  // Serial.println("CONTROL START");
   delay(1000);
   Motor_Tx_L.kd_in = 1;
   Motor_Tx_R.kd_in = 1;
   Motor_Tx_L.kp_in = 0;
   Motor_Tx_R.kp_in = 0;
-  Serial.println(origine_L.leg);
-  Serial.println(origine_R.leg);
-  Serial.println(origine_L.shoulder);
-  Serial.println(origine_R.shoulder);
+  // Serial.println(origine_L.leg);
+  // Serial.println(origine_R.leg);
+  // Serial.println(origine_L.shoulder);
+  // Serial.println(origine_R.shoulder);
 }
 
 
@@ -118,6 +118,6 @@ void loop() {
 
   
 
-  Serial.println("pL :"+String(degrees(Motor_Rx_R.position-origine_L.leg))+ "  pR :"+String(degrees(Motor_Rx_L.position-origine_L.leg))+ "  T_L :"+String(Motor_Rx_R.torque) +"  T_R :"+String(Motor_Rx_L.torque)+ " hip: "+String(HipAngle) );
+  // Serial.println("pL :"+String(degrees(Motor_Rx_R.position-origine_L.leg))+ "  pR :"+String(degrees(Motor_Rx_L.position-origine_L.leg))+ "  T_L :"+String(Motor_Rx_R.torque) +"  T_R :"+String(Motor_Rx_L.torque)+ " hip: "+String(HipAngle) );
 
 }

@@ -69,7 +69,7 @@ bias calculate_bias() {
   float LegAngle = 0;
   float LegVel = 0;
   float dt = 5;
-  Serial.println("Calibrating IMU...");
+  //Serial.println("Calibrating IMU...");
     for (int i = 0; i < countersize; i++) {
         long time_now = millis();
         LegAngle = readIMU();
@@ -85,7 +85,7 @@ bias calculate_bias() {
   //calculate bias
   bias_pitch.angle = calculateMean(Angles, countersize);
   bias_pitch.velocity = calculateMean(Velocities, countersize);
-  Serial.println("IMU Bias calculated");
+  //Serial.println("IMU Bias calculated");
   delay(200);
   return bias_pitch;
 }
@@ -93,12 +93,12 @@ bias calculate_bias() {
 void initializeIMU(){
   // Try to initialize!
   if (!mpu.begin()) {
-    Serial.println("Failed to find MPU6050 chip");
+    //Serial.println("Failed to find MPU6050 chip");
     while (1) {
       delay(10);
     }
   }
-  Serial.println("MPU6050 Found!");
+  //Serial.println("MPU6050 Found!");
 
   //set accelerometer range
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
